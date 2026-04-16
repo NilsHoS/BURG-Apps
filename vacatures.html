@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>BURG Vacatures</title>
+<link rel="apple-touch-icon" href="/Fee-Calculator-BURG/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #0f3460;
+    --blue-mid: #1a4f8c;
+    --blue-light: #2d7dd2;
+    --go: #1db954;
+    --nogo: #e63946;
+    --amber: #f4a261;
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f5;
+    --text-muted: #8888a0;
+    --card-w: min(380px, 92vw);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    user-select: none;
+  }
+
+  .header {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 10px;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--blue-light); }
+  .stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat strong { font-size: 16px; color: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; }
+
+  .progress-bar { width: 100%; max-width: 500px; padding: 0 20px 14px; }
+  .progress-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue-light), var(--go)); border-radius: 2px; transition: width 0.4s ease; }
+
+  .stack { position: relative; width: var(--card-w); height: 500px; margin: 10px 0 16px; }
+
+  .card {
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    cursor: grab;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    will-change: transform;
+    touch-action: none;
+  }
+  .card:active { cursor: grabbing; }
+  .card.behind-1 { transform: scale(0.95) translateY(12px); filter: brightness(0.7); pointer-events: none; }
+  .card.behind-2 { transform: scale(0.90) translateY(24px); filter: brightness(0.5); pointer-events: none; }
+
+  .stamp {
+    position: absolute;
+    top: 28px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: 2px;
+    border: 3px solid;
+    padding: 4px 14px;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .stamp.go { left: 20px; color: var(--go); border-color: var(--go); transform: rotate(-12deg); }
+  .stamp.nogo { right: 20px; color: var(--nogo); border-color: var(--nogo); transform: rotate(12deg); }
+
+  .card-tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+  .tier-a { background: rgba(29,185,84,0.15); color: var(--go); }
+  .tier-b { background: rgba(45,125,210,0.15); color: var(--blue-light); }
+  .tier-c { background: rgba(244,162,97,0.15); color: var(--amber); }
+
+  .card-company { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; line-height: 1.2; margin-bottom: 6px; }
+  .card-role { font-size: 15px; color: var(--blue-light); font-weight: 500; margin-bottom: 20px; }
+  .card-divider { height: 1px; background: var(--border); margin-bottom: 18px; }
+
+  .card-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .meta-item { display: flex; flex-direction: column; gap: 3px; }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 500; }
+  .meta-value { font-size: 14px; font-weight: 500; color: var(--text); }
+  .meta-value.salary { color: var(--go); font-family: 'Syne', sans-serif; font-weight: 700; }
+  .meta-value.unknown { color: var(--text-muted); font-style: italic; font-size: 12px; }
+
+  .score-section { margin-top: auto; }
+  .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .score-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+  .score-number { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; }
+  .score-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .score-fill { height: 100%; border-radius: 3px; }
+  .routing-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .routing-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .swipe-hint { font-size: 11px; color: var(--text-muted); text-align: center; margin-bottom: 14px; letter-spacing: 0.5px; }
+
+  .actions { display: flex; gap: 16px; align-items: center; justify-content: center; margin-bottom: 20px; }
+  .btn { display: flex; align-items: center; justify-content: center; border: none; border-radius: 50px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; flex-shrink: 0; }
+  .btn:active { transform: scale(0.94); }
+  .btn-nogo { width: 64px; height: 64px; background: rgba(230,57,70,0.12); border: 2px solid rgba(230,57,70,0.4); color: var(--nogo); border-radius: 50%; font-size: 22px; }
+  .btn-nogo:hover { background: rgba(230,57,70,0.22); box-shadow: 0 0 20px rgba(230,57,70,0.2); }
+  .btn-go { width: 64px; height: 64px; background: rgba(29,185,84,0.12); border: 2px solid rgba(29,185,84,0.4); color: var(--go); border-radius: 50%; font-size: 22px; }
+  .btn-go:hover { background: rgba(29,185,84,0.22); box-shadow: 0 0 20px rgba(29,185,84,0.2); }
+  .btn-skip { width: 44px; height: 44px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 50%; font-size: 16px; }
+
+  .empty { display: none; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); text-align: center; gap: 12px; }
+  .empty-icon { font-size: 48px; margin-bottom: 8px; }
+  .empty h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; }
+  .empty p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+  .btn-reset { margin-top: 12px; padding: 12px 28px; background: var(--blue-light); color: white; border: none; border-radius: 50px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; transition: opacity 0.2s; }
+  .btn-reset:hover { opacity: 0.85; }
+
+  .back-link { position: fixed; top: 18px; left: 16px; font-size: 12px; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 4px; z-index: 200; }
+  .back-link:hover { color: var(--text); }
+
+  .log-btn { position: fixed; bottom: 20px; right: 20px; width: 48px; height: 48px; background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; color: var(--text-muted); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: background 0.2s; }
+  .log-btn:hover { background: var(--surface); }
+  .log-panel { position: fixed; bottom: 80px; right: 20px; width: 280px; max-height: 320px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; overflow-y: auto; z-index: 99; display: none; flex-direction: column; gap: 8px; }
+  .log-panel.open { display: flex; }
+  .log-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .log-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .log-item:last-child { border-bottom: none; }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  @keyframes flyLeft { to { transform: translateX(-140%) rotate(-25deg); opacity: 0; } }
+  @keyframes flyRight { to { transform: translateX(140%) rotate(25deg); opacity: 0; } }
+  @keyframes flyUp { to { transform: translateY(-80%) scale(0.8); opacity: 0; } }
+  .fly-left { animation: flyLeft 0.35s ease forwards; }
+  .fly-right { animation: flyRight 0.35s ease forwards; }
+  .fly-up { animation: flyUp 0.3s ease forwards; }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="/Fee-Calculator-BURG/">← Terug</a>
+
+<div class="header">
+  <div class="logo">BURG <span>Vacatures</span></div>
+  <div class="stats">
+    <div class="stat"><strong id="count-go">0</strong>Go</div>
+    <div class="stat"><strong id="count-nogo">0</strong>No go</div>
+    <div class="stat"><strong id="count-left">8</strong>Over</div>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-track">
+    <div class="progress-fill" id="progress" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="stack" id="stack"></div>
+
+<div class="empty" id="empty">
+  <div class="empty-icon">✅</div>
+  <h3>Sessie compleet</h3>
+  <p>Je hebt alle vacatures beoordeeld.<br>De resultaten zijn opgeslagen.</p>
+  <button class="btn-reset" onclick="resetDeck()">Nieuwe sessie starten</button>
+</div>
+
+<div class="swipe-hint" id="hint">← swipe of gebruik de knoppen →</div>
+
+<div class="actions" id="actions">
+  <button class="btn btn-nogo" onclick="doAction('nogo')" title="No go">✕</button>
+  <button class="btn btn-skip" onclick="doAction('skip')" title="Later">◦◦</button>
+  <button class="btn btn-go" onclick="doAction('go')" title="Go">✓</button>
+</div>
+
+<button class="log-btn" onclick="toggleLog()">📋</button>
+<div class="log-panel" id="log-panel">
+  <div class="log-title">Beslissingen deze sessie</div>
+  <div id="log-list"><p style="font-size:12px;color:var(--text-muted)">Nog geen beslissingen.</p></div>
+</div>
+
+<script>
+const vacatures = [
+  { bedrijf:"Damen Shipyards", functie:"QHSSE Manager", locatie:"Gorinchem", salaris:"€ 6.800 / mnd", salarisRaw:6800, sector:"Industrie / Manufacturing", tier:"A", route:"senior", score:88 },
+  { bedrijf:"Aviko B.V.", functie:"HSE Coördinator", locatie:"Steenderen", salaris:"€ 4.600 / mnd", salarisRaw:4600, sector:"Food & Beverage", tier:"A", route:"medior", score:72 },
+  { bedrijf:"Strukton Rail", functie:"Head of SHEQ", locatie:"Utrecht", salaris:"€ 7.400 / mnd", salarisRaw:7400, sector:"Infra / Bouw", tier:"B", route:"senior", score:81 },
+  { bedrijf:"Vion Food Group", functie:"Quality Manager", locatie:"Boxtel", salaris:"Onbekend", salarisRaw:null, sector:"Food & Beverage", tier:"A", route:"medior", score:65 },
+  { bedrijf:"Van Oord", functie:"EHS Adviseur", locatie:"Rotterdam", salaris:"€ 5.200 / mnd", salarisRaw:5200, sector:"Energie / Logistiek", tier:"B", route:"medior", score:76 },
+  { bedrijf:"Renewi Nederland", functie:"QHSSE Coördinator", locatie:"Amersfoort", salaris:"€ 4.100 / mnd", salarisRaw:4100, sector:"Milieu / Logistiek", tier:"B", route:"onboarding", score:54 },
+  { bedrijf:"Royal Cosun", functie:"Compliance Manager QHSSE", locatie:"Breda", salaris:"€ 6.100 / mnd", salarisRaw:6100, sector:"Food & Beverage", tier:"A", route:"senior", score:83 },
+  { bedrijf:"BAM Infra", functie:"Safety Officer", locatie:"Bunnik", salaris:"€ 3.900 / mnd", salarisRaw:3900, sector:"Infra / Bouw", tier:"B", route:"onboarding", score:48 }
+];
+
+const total = vacatures.length;
+let current = 0, decisions = [], activeCard = null;
+
+function tierClass(t) { return t==='A'?'tier-a':t==='B'?'tier-b':'tier-c'; }
+function routeColor(r) { return r==='senior'?'#9b5de5':r==='medior'?'#2d7dd2':'#f4a261'; }
+function scoreColor(s) { return s>=75?'#1db954':s>=55?'#f4a261':'#e63946'; }
+function routeLabel(r) { return r==='senior'?'Senior consultant':r==='medior'?'Medior consultant':'Onboarding'; }
+
+function buildCard(vac, zIndex, cls) {
+  const div = document.createElement('div');
+  div.className = 'card '+(cls||'');
+  div.style.zIndex = zIndex;
+  const salaryClass = vac.salarisRaw===null?'unknown':'salary';
+  const warn = vac.salarisRaw!==null && vac.salarisRaw<3750 ? ' ⚠️':'';
+  div.innerHTML = `
+    <div class="stamp go">GO</div>
+    <div class="stamp nogo">NO GO</div>
+    <div class="card-tier ${tierClass(vac.tier)}"><span>Tier ${vac.tier}</span><span>·</span><span>${vac.sector}</span></div>
+    <div class="card-company">${vac.bedrijf}</div>
+    <div class="card-role">${vac.functie}</div>
+    <div class="card-divider"></div>
+    <div class="card-meta">
+      <div class="meta-item"><span class="meta-label">📍 Locatie</span><span class="meta-value">${vac.locatie}</span></div>
+      <div class="meta-item"><span class="meta-label">💶 Salaris</span><span class="meta-value ${salaryClass}">${vac.salaris}${warn}</span></div>
+      <div class="meta-item"><span class="meta-label">🏭 Sector</span><span class="meta-value">${vac.sector}</span></div>
+      <div class="meta-item"><span class="meta-label">👤 Routing</span><span class="meta-value" style="color:${routeColor(vac.route)}">${routeLabel(vac.route)}</span></div>
+    </div>
+    <div class="score-section">
+      <div class="score-header">
+        <span class="score-label">Relevantiescore</span>
+        <span class="score-number" style="color:${scoreColor(vac.score)}">${vac.score}/100</span>
+      </div>
+      <div class="score-track"><div class="score-fill" style="width:${vac.score}%;background:${scoreColor(vac.score)}"></div></div>
+      <div class="routing-badge"><div class="routing-dot" style="background:${routeColor(vac.route)}"></div>Naar ${routeLabel(vac.route)}</div>
+    </div>`;
+  return div;
+}
+
+function renderStack() {
+  const stack = document.getElementById('stack');
+  stack.innerHTML = '';
+  if (current >= total) {
+    stack.style.display = 'none';
+    document.getElementById('empty').style.display = 'flex';
+    document.getElementById('hint').style.display = 'none';
+    document.getElementById('actions').style.display = 'none';
+    return;
+  }
+  for (let i = Math.min(current+2, total-1); i >= current; i--) {
+    const offset = i - current;
+    const cls = offset===0?'':offset===1?'behind-1':'behind-2';
+    const card = buildCard(vacatures[i], 10-offset, cls);
+    stack.appendChild(card);
+    if (offset===0) { activeCard = card; setupDrag(card); }
+  }
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('count-go').textContent = decisions.filter(d=>d.action==='go').length;
+  document.getElementById('count-nogo').textContent = decisions.filter(d=>d.action==='nogo').length;
+  document.getElementById('count-left').textContent = total - current;
+  document.getElementById('progress').style.width = (current/total*100)+'%';
+}
+
+function doAction(action) {
+  if (current >= total || !activeCard) return;
+  const vac = vacatures[current];
+  decisions.push({vac, action});
+  addLog(vac, action);
+  const animClass = action==='go'?'fly-right':action==='nogo'?'fly-left':'fly-up';
+  activeCard.classList.add(animClass);
+  if (action==='go') { const s=activeCard.querySelector('.stamp.go'); if(s) s.style.opacity='1'; }
+  if (action==='nogo') { const s=activeCard.querySelector('.stamp.nogo'); if(s) s.style.opacity='1'; }
+  setTimeout(() => { current++; renderStack(); }, 320);
+}
+
+function setupDrag(card) {
+  let startX, startY, dragging = false;
+  function onStart(e) {
+    dragging = true;
+    const pt = e.touches?e.touches[0]:e;
+    startX = pt.clientX; startY = pt.clientY;
+    card.style.transition = 'none';
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const pt = e.touches?e.touches[0]:e;
+    const dx = pt.clientX - startX;
+    const dy = pt.clientY - startY;
+    card.style.transform = `translateX(${dx}px) translateY(${dy*0.3}px) rotate(${dx*0.08}deg)`;
+    const sg = card.querySelector('.stamp.go');
+    const sn = card.querySelector('.stamp.nogo');
+    if (sg) sg.style.opacity = dx>30 ? Math.min((dx-30)/80,1) : 0;
+    if (sn) sn.style.opacity = dx<-30 ? Math.min((-dx-30)/80,1) : 0;
+  }
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    const pt = e.changedTouches?e.changedTouches[0]:e;
+    const dx = pt.clientX - startX;
+    card.style.transition = '';
+    if (dx > 80) doAction('go');
+    else if (dx < -80) doAction('nogo');
+    else {
+      card.style.transform = '';
+      card.querySelectorAll('.stamp').forEach(s => s.style.opacity=0);
+    }
+  }
+  card.addEventListener('mousedown', onStart);
+  card.addEventListener('touchstart', onStart, {passive:true});
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, {passive:false});
+  window.addEventListener('mouseup', onEnd);
+  window.addEventListener('touchend', onEnd);
+}
+
+function addLog(vac, action) {
+  const list = document.getElementById('log-list');
+  if (list.querySelector('p')) list.innerHTML = '';
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  const dotClass = action==='go'?'log-go':action==='nogo'?'log-nogo':'log-skip';
+  const dotColor = action==='go'?'#1db954':action==='nogo'?'#e63946':'#8888a0';
+  const label = action==='go'?'Go':action==='nogo'?'No go':'Later';
+  item.innerHTML = `<div class="log-dot" style="background:${dotColor}"></div><span><strong>${vac.bedrijf}</strong> — ${label}</span>`;
+  list.insertBefore(item, list.firstChild);
+}
+
+function toggleLog() { document.getElementById('log-panel').classList.toggle('open'); }
+
+function resetDeck() {
+  current = 0; decisions = [];
+  document.getElementById('log-list').innerHTML = '<p style="font-size:12px;color:var(--text-muted)">Nog geen beslissingen.</p>';
+  document.getElementById('stack').style.display = '';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('hint').style.display = '';
+  document.getElementById('actions').style.display = '';
+  renderStack();
+}
+
+renderStack();
+</script>
+</body>
+</html>
