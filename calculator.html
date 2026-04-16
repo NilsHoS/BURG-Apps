@@ -44,6 +44,7 @@
       margin-bottom: 1rem;
       -webkit-tap-highlight-color: transparent;
     }
+    .back:hover { color: #1a1a18; }
 
     h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; color: #1a1a18; }
 
@@ -75,7 +76,7 @@
       width: 22px; height: 22px; border-radius: 50%;
       background: #1a1a18; cursor: pointer; border: none;
     }
-    .slider-val { font-size: 13px; color: #73726c; min-width: 36px; text-align: right; white-space: nowrap; }
+    .slider-val { font-size: 13px; color: #73726c; min-width: 52px; text-align: right; white-space: nowrap; }
 
     .btn-group { display: flex; gap: 6px; }
     .btn-group button {
@@ -85,6 +86,7 @@
       transition: background 0.15s, color 0.15s, border-color 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
+    .btn-group button:hover { border-color: rgba(0,0,0,0.4); color: #1a1a18; }
     .btn-group button.active { background: #1a1a18; color: #f5f4f0; border-color: #1a1a18; }
 
     .toggle-wrap { display: flex; align-items: center; gap: 10px; }
@@ -108,11 +110,23 @@
 
     .drempel-note { font-size: 12px; color: #888780; margin-top: 1rem; line-height: 1.5; }
 
+    /* Desktop: two-column layout */
+    @media (min-width: 640px) {
+      body { padding: 2.5rem 1.5rem; align-items: center; }
+      .card { max-width: 780px; padding: 2rem; }
+      h1 { font-size: 20px; }
+      .metrics { grid-template-columns: repeat(4, 1fr); }
+      .metric-value { font-size: 22px; }
+      .layout-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+      .controls { gap: 18px; margin-bottom: 0; }
+    }
+
     @media (prefers-color-scheme: dark) {
       body { background: #1e1e1c; color: #e0dfd8; }
       .card { background: #2a2a28; border-color: rgba(255,255,255,0.1); }
       h1 { color: #e0dfd8; }
       .back { color: #5f5e5a; }
+      .back:hover { color: #e0dfd8; }
       .metric { background: #333330; }
       .metric-label { color: #888780; }
       .metric-value { color: #e0dfd8; }
@@ -122,6 +136,7 @@
       input[type="range"]::-moz-range-thumb { background: #e0dfd8; }
       .slider-val { color: #888780; }
       .btn-group button { border-color: rgba(255,255,255,0.25); color: #888780; }
+      .btn-group button:hover { border-color: rgba(255,255,255,0.5); color: #e0dfd8; }
       .btn-group button.active { background: #e0dfd8; color: #1a1a18; border-color: #e0dfd8; }
       .toggle-track { background: #444441; }
       .toggle input:checked + .toggle-track { background: #e0dfd8; }
@@ -157,77 +172,81 @@
       </div>
     </div>
 
-    <div class="controls">
+    <div class="layout-cols">
+      <div class="controls">
 
-      <div class="control-row">
-        <span class="control-label">Maandsalaris</span>
-        <div class="control-input">
-          <input type="range" min="2000" max="12000" step="100" value="4500" id="sl-salaris" oninput="calc()">
-          <span class="slider-val" id="lbl-salaris">€ 4.500</span>
+        <div class="control-row">
+          <span class="control-label">Maandsalaris</span>
+          <div class="control-input">
+            <input type="range" min="2000" max="12000" step="100" value="4500" id="sl-salaris" oninput="calc()">
+            <span class="slider-val" id="lbl-salaris">€ 4.500</span>
+          </div>
         </div>
-      </div>
 
-      <div class="control-row">
-        <span class="control-label">Periodes</span>
-        <div class="btn-group" id="periode-group">
-          <button onclick="setPeriode(12, this)" class="active">12</button>
-          <button onclick="setPeriode(13, this)">13</button>
-          <button onclick="setPeriode(14, this)">14</button>
+        <div class="control-row">
+          <span class="control-label">Periodes</span>
+          <div class="btn-group" id="periode-group">
+            <button onclick="setPeriode(12, this)" class="active">12</button>
+            <button onclick="setPeriode(13, this)">13</button>
+            <button onclick="setPeriode(14, this)">14</button>
+          </div>
         </div>
-      </div>
 
-      <div class="control-row">
-        <span class="control-label">Vakantiegeld</span>
-        <div class="control-input">
-          <input type="range" min="0" max="8" step="1" value="8" id="sl-vak" oninput="calc()">
-          <span class="slider-val" id="lbl-vak">8%</span>
+        <div class="control-row">
+          <span class="control-label">Vakantiegeld</span>
+          <div class="control-input">
+            <input type="range" min="0" max="8" step="1" value="8" id="sl-vak" oninput="calc()">
+            <span class="slider-val" id="lbl-vak">8%</span>
+          </div>
         </div>
-      </div>
 
-      <div class="control-row">
-        <span class="control-label">Leaseauto</span>
-        <div class="toggle-wrap">
-          <label class="toggle">
-            <input type="checkbox" id="tog-lease" onchange="calc()">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
-          <span class="toggle-val" id="lbl-lease">Nee &mdash; &euro;&nbsp;0</span>
+      </div>
+      <div class="controls">
+
+        <div class="control-row">
+          <span class="control-label">Leaseauto</span>
+          <div class="toggle-wrap">
+            <label class="toggle">
+              <input type="checkbox" id="tog-lease" onchange="calc()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+            <span class="toggle-val" id="lbl-lease">Nee &mdash; &euro;&nbsp;0</span>
+          </div>
         </div>
-      </div>
 
-      <div class="control-row">
-        <span class="control-label">Bonus</span>
-        <div class="control-input">
-          <input type="range" min="0" max="10" step="1" value="0" id="sl-bonus" oninput="calc()">
-          <span class="slider-val" id="lbl-bonus">0%</span>
+        <div class="control-row">
+          <span class="control-label">Bonus</span>
+          <div class="control-input">
+            <input type="range" min="0" max="10" step="1" value="0" id="sl-bonus" oninput="calc()">
+            <span class="slider-val" id="lbl-bonus">0%</span>
+          </div>
         </div>
-      </div>
 
-      <div class="control-row">
-        <span class="control-label">Fee percentage</span>
-        <div class="btn-group" id="pct-group">
-          <button onclick="setPct(21, this)" class="active">21%</button>
-          <button onclick="setPct(22, this)">22%</button>
-          <button onclick="setPct(23, this)">23%</button>
-          <button onclick="setPct(24, this)">24%</button>
-          <button onclick="setPct(25, this)">25%</button>
-          <button onclick="setPct(26, this)">26%</button>
+        <div class="control-row">
+          <span class="control-label">Fee percentage</span>
+          <div class="btn-group" id="pct-group">
+            <button onclick="setPct(21, this)" class="active">21%</button>
+            <button onclick="setPct(22, this)">22%</button>
+            <button onclick="setPct(23, this)">23%</button>
+            <button onclick="setPct(24, this)">24%</button>
+            <button onclick="setPct(25, this)">25%</button>
+            <button onclick="setPct(26, this)">26%</button>
+          </div>
         </div>
-      </div>
 
+      </div>
     </div>
 
-    <div class="verdict nogo" id="verdict">
+    <div class="verdict nogo" id="verdict" style="margin-top: 1.5rem;">
       No-go &mdash; fee komt niet boven &euro;&nbsp;13.500
     </div>
-
     <p class="drempel-note">Minimumdrempel: &euro;&nbsp;13.500 &middot; Harde no-go onder &euro;&nbsp;4.500/mnd &middot; Bonus exclusief vakantiegeld</p>
   </div>
 
   <script>
     let periodes = 12;
-    let feePct   = 21;
+    let feePct = 21;
 
     function setPeriode(n, el) {
       periodes = n;
