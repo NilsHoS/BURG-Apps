@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BURG Tools">
+  <link rel="manifest" href="/Fee-Calculator-BURG/manifest.json">
+  <link rel="apple-touch-icon" href="/Fee-Calculator-BURG/icon-192.png">
+  <title>BURG — Tools & Apps</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f4f0;
+      color: #1a1a18;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 2px 12px rgba(65,105,160,0.18);
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    h1 { font-size: 22px; font-weight: 500; color: #1a1a18; margin-bottom: 0.25rem; text-align: center; }
+    .subtitle { font-size: 14px; color: #73726c; margin-bottom: 2.5rem; text-align: center; }
+
+    .tools {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .tool-card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      padding: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: transform 0.1s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tool-card:hover { border-color: rgba(65,105,160,0.4); }
+    .tool-card:active { transform: scale(0.98); }
+
+    .tool-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tool-icon.fee { background: #4169a0; }
+    .tool-icon.hon { background: #1a1a18; }
+
+    .tool-text { flex: 1; }
+    .tool-name { font-size: 15px; font-weight: 500; color: #1a1a18; margin-bottom: 2px; }
+    .tool-desc { font-size: 13px; color: #73726c; line-height: 1.4; }
+    .tool-arrow { font-size: 20px; color: #b4b2a9; flex-shrink: 0; }
+
+    .version { font-size: 11px; color: #b4b2a9; margin-top: 2rem; }
+
+    /* Desktop */
+    @media (min-width: 640px) {
+      .tools { max-width: 680px; flex-direction: row; }
+      .tool-card { flex-direction: column; align-items: flex-start; padding: 1.5rem; flex: 1; }
+      .tool-arrow { display: none; }
+      .tool-icon { width: 52px; height: 52px; margin-bottom: 0.75rem; }
+      .tool-name { font-size: 16px; margin-bottom: 4px; }
+      .tool-desc { font-size: 13px; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1e1e1c; color: #e0dfd8; }
+      h1 { color: #e0dfd8; }
+      .subtitle { color: #5f5e5a; }
+      .tool-card { background: #2a2a28; border-color: rgba(255,255,255,0.1); }
+      .tool-card:hover { border-color: rgba(65,105,160,0.5); }
+      .tool-name { color: #e0dfd8; }
+      .tool-desc { color: #5f5e5a; }
+      .tool-icon.hon { background: #333330; }
+      .tool-arrow { color: #444441; }
+      .version { color: #444441; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <img src="/Fee-Calculator-BURG/icon-512.png" alt="BURG logo">
+  </div>
+
+  <h1>BURG Tools & Apps</h1>
+  <p class="subtitle">Kies een tool</p>
+
+  <div class="tools">
+
+    <a href="/Fee-Calculator-BURG/calculator.html" class="tool-card">
+      <div class="tool-icon fee">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <rect x="4" y="3" width="18" height="20" rx="3" stroke="white" stroke-width="1.5"/>
+          <rect x="7.5" y="6.5" width="11" height="4" rx="1" fill="white"/>
+          <circle cx="8.5" cy="15" r="1.5" fill="white"/>
+          <circle cx="13" cy="15" r="1.5" fill="white"/>
+          <circle cx="17.5" cy="15" r="1.5" fill="white"/>
+          <circle cx="8.5" cy="19.5" r="1.5" fill="white"/>
+          <circle cx="13" cy="19.5" r="1.5" fill="white"/>
+          <circle cx="17.5" cy="19.5" r="1.5" fill="white"/>
+        </svg>
+      </div>
+      <div class="tool-text">
+        <div class="tool-name">Fee calculator</div>
+        <div class="tool-desc">Schat de fee in vóór een gesprek</div>
+      </div>
+      <span class="tool-arrow">›</span>
+    </a>
+
+    <a href="/Fee-Calculator-BURG/plaatsing.html" class="tool-card">
+      <div class="tool-icon hon">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <path d="M3 14.5L7 10.5L10.5 12.5L14.5 8.5H19" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 8.5H22V15.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="19" cy="18" r="4" fill="#4169a0"/>
+          <path d="M17.5 18L18.5 19L20.5 17" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="tool-text">
+        <div class="tool-name">Honorarium tool</div>
+        <div class="tool-desc">Bereken het honorarium bij plaatsing</div>
+      </div>
+      <span class="tool-arrow">›</span>
+    </a>
+
+  </div>
+
+  <p class="version">BURG QHSSE &middot; 2026</p>
+
+</body>
+</html>
