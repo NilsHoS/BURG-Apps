@@ -383,6 +383,9 @@
 
       const totaalRestant = salesRestant + recRestant + conRestant + headSalesBedrag + headRecBedrag;
 
+      // Basis voor percentage: restant bij aanbetaling, totaal zonder
+      const pctBasis = aanbetaling > 0 ? totaalRestant : deal;
+
       // Update metrics
       document.getElementById('out-deal').textContent        = fmt(deal);
       document.getElementById('out-aanbetaling').textContent = aanbetaling > 0 ? fmt(aanbetaling) : '\u2014';
@@ -390,11 +393,12 @@
       document.getElementById('out-restant').textContent     = fmt(totaalRestant);
 
       // Build results
-      function row(naam, rol, netto, al, restant, pctVanDeal, onboarding, afdrachtLabel) {
+      function row(naam, rol, netto, al, restant, onboarding, afdrachtLabel) {
         const heeftAl = aanbetaling > 0 && al > 0;
         const subParts = [];
         if (onboarding) subParts.push(afdrachtLabel);
         if (heeftAl) subParts.push('al ontvangen: ' + fmt(al));
+        const pct = fmtPct((restant / pctBasis) * 100);
         return `
         <div class="result-row">
           <div class="result-left">
@@ -402,7 +406,7 @@
             <div class="result-sub">${rol}${subParts.length ? ' &middot; ' + subParts.join(' &middot; ') : ''}</div>
           </div>
           <div class="result-right">
-            <div class="result-pct">${fmtPct(pctVanDeal)}</div>
+            <div class="result-pct">${pct}</div>
             <div class="result-amount">${fmt(netto)} totaal</div>
             <div class="result-restant">+ ${fmt(restant)} te ontvangen</div>
           </div>
@@ -417,16 +421,16 @@
             <div class="result-sub">${omschrijving}</div>
           </div>
           <div class="result-right">
-            <div class="result-pct">${fmtPct((bedrag / deal) * 100)}</div>
+            <div class="result-pct">${fmtPct((bedrag / pctBasis) * 100)}</div>
             <div class="result-restant">+ ${fmt(bedrag)} te ontvangen</div>
           </div>
         </div>`;
       }
 
       let html = '<div class="results">';
-      html += row(salesNaam, 'Sales officer', salesNetto, salesAl, salesRestant, (salesNetto/deal)*100, obSales, '20% → Head of Sales');
-      html += row(recNaam,   'Recruiter',     recNetto,   recAl,   recRestant,   (recNetto/deal)*100,   obRec,   '20% → Head of Recruitment');
-      html += row(conNaam,   'Consultant',    conNetto,   conAl,   conRestant,   (conNetto/deal)*100,   obCon,   '20% → Head of Recruitment');
+      html += row(salesNaam, 'Sales officer', salesNetto, salesAl, salesRestant, obSales, '20% → Head of Sales');
+      html += row(recNaam,   'Recruiter',     recNetto,   recAl,   recRestant,   obRec,   '20% → Head of Recruitment');
+      html += row(conNaam,   'Consultant',    conNetto,   conAl,   conRestant,   obCon,   '20% → Head of Recruitment');
 
       if (headSalesBedrag > 0) {
         html += headRow('Head of Sales', headSalesBedrag, 'Onboarding afdracht van ' + salesNaam);
