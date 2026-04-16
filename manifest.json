@@ -1,21 +1,21 @@
 {
-  "name": "BURG Fee Calculator",
-  "short_name": "BURG Fee",
-  "description": "Fee calculator voor BURG recruitment",
-  "start_url": "/Fee-Calculator-BURG/",
-  "scope": "/Fee-Calculator-BURG/",
+  "name": "BURG Apps & Tools",
+  "short_name": "BURG Apps",
+  "description": "Tools & Apps voor BURG recruitment",
+  "start_url": "/BURG-Apps/",
+  "scope": "/BURG-Apps/",
   "display": "standalone",
   "background_color": "#f5f4f0",
   "theme_color": "#1a1a18",
   "lang": "nl",
   "icons": [
     {
-      "src": "/Fee-Calculator-BURG/icon-192.png",
+      "src": "/BURG-Apps/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/Fee-Calculator-BURG/icon-512.png",
+      "src": "/BURG-Apps/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
