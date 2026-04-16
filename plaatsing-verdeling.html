@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BURG Plaatsing">
+  <link rel="manifest" href="/Fee-Calculator-BURG/manifest.json">
+  <link rel="apple-touch-icon" href="/Fee-Calculator-BURG/icon-192.png">
+  <title>BURG — Plaatsing calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f4f0;
+      color: #1a1a18;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      color: #73726c;
+      text-decoration: none;
+      margin-bottom: 1rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .back:hover { color: #1a1a18; }
+
+    h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; color: #1a1a18; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 1.25rem;
+    }
+
+    .metric { background: #f5f4f0; border-radius: 8px; padding: 12px 14px; }
+    .metric.accent { background: #1a1a18; }
+    .metric-label { font-size: 12px; color: #73726c; margin-bottom: 3px; }
+    .metric.accent .metric-label { color: #888780; }
+    .metric-value { font-size: 19px; font-weight: 500; color: #1a1a18; }
+    .metric.accent .metric-value { color: #f5f4f0; font-size: 22px; }
+
+    .section-title {
+      font-size: 11px; font-weight: 500; color: #b4b2a9;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin: 1.25rem 0 0.75rem;
+    }
+
+    .controls { display: flex; flex-direction: column; gap: 14px; margin-bottom: 1.25rem; }
+    .control-row { display: flex; flex-direction: column; gap: 6px; }
+    .control-label { font-size: 12px; color: #73726c; font-weight: 500; }
+    .control-input { display: flex; align-items: center; gap: 10px; }
+
+    .text-input-wrap {
+      display: flex; align-items: center; flex: 1;
+      border: 1.5px solid rgba(0,0,0,0.15); border-radius: 8px;
+      overflow: hidden; background: #fff; transition: border-color 0.2s;
+    }
+    .text-input-wrap.has-input { border-color: #3b6d11; }
+
+    .input-prefix {
+      padding: 10px; font-size: 14px; color: #73726c;
+      background: #f5f4f0; border-right: 1px solid rgba(0,0,0,0.1); white-space: nowrap;
+    }
+    .text-input-wrap input[type="number"] {
+      flex: 1; border: none; outline: none; padding: 10px 12px;
+      font-size: 16px; font-weight: 500; color: #1a1a18;
+      background: transparent; -moz-appearance: textfield; width: 100%;
+    }
+    .text-input-wrap input[type="number"]::-webkit-outer-spin-button,
+    .text-input-wrap input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .text-input-wrap input[type="text"] {
+      flex: 1; border: none; outline: none; padding: 10px 12px;
+      font-size: 15px; color: #1a1a18; background: transparent; width: 100%;
+    }
+
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0; background: #d3d1c7;
+      border-radius: 12px; cursor: pointer; transition: background 0.2s;
+    }
+    .toggle input:checked + .toggle-track { background: #1a1a18; }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+      background: #fff; border-radius: 50%; pointer-events: none; transition: transform 0.2s;
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+    .toggle-val { font-size: 13px; color: #73726c; }
+
+    .person-block {
+      border: 0.5px solid rgba(0,0,0,0.10); border-radius: 10px;
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .person-name-row { display: flex; align-items: center; gap: 10px; }
+    .person-name-row .text-input-wrap { flex: 1; }
+    .onboarding-row { display: flex; align-items: center; gap: 10px; }
+    .onboarding-label { font-size: 12px; color: #73726c; flex: 1; }
+
+    .divider { border: none; border-top: 0.5px solid rgba(0,0,0,0.08); margin: 0.5rem 0; }
+
+    .results { display: flex; flex-direction: column; gap: 8px; margin-top: 1.25rem; }
+
+    .result-row {
+      background: #f5f4f0; border-radius: 8px; padding: 12px 14px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .result-row.head-row { background: #fff; border: 0.5px solid rgba(0,0,0,0.10); }
+    .result-left { display: flex; flex-direction: column; gap: 2px; }
+    .result-name { font-size: 14px; font-weight: 500; color: #1a1a18; }
+    .result-sub { font-size: 12px; color: #73726c; }
+    .result-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .result-pct { font-size: 16px; font-weight: 500; color: #1a1a18; }
+    .result-amount { font-size: 12px; color: #73726c; }
+    .result-restant { font-size: 12px; color: #3b6d11; font-weight: 500; }
+
+    .badge-onboarding {
+      display: inline-block; font-size: 10px; background: #faeeda; color: #854f0b;
+      padding: 2px 7px; border-radius: 6px; margin-left: 5px; vertical-align: middle; font-weight: 400;
+    }
+
+    .totaal-block {
+      border-top: 0.5px solid rgba(0,0,0,0.10); margin-top: 4px; padding-top: 10px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .totaal-row-item { display: flex; justify-content: space-between; font-size: 13px; }
+    .totaal-row-item span { color: #73726c; }
+    .totaal-row-item strong { color: #1a1a18; }
+
+    .idle-state { background: #f5f4f0; border-radius: 8px; padding: 14px; font-size: 14px; color: #73726c; text-align: center; }
+
+    @media (min-width: 640px) {
+      body { padding: 2.5rem 1.5rem; align-items: center; }
+      .card { max-width: 780px; padding: 2rem; }
+      h1 { font-size: 20px; }
+      .metrics { grid-template-columns: 1fr 1fr 1fr 1fr; }
+      .metric-value { font-size: 22px; }
+      .metric.accent .metric-value { font-size: 26px; }
+      .layout-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1e1e1c; color: #e0dfd8; }
+      .card { background: #2a2a28; border-color: rgba(255,255,255,0.1); }
+      h1 { color: #e0dfd8; }
+      .back { color: #5f5e5a; }
+      .back:hover { color: #e0dfd8; }
+      .metric { background: #333330; }
+      .metric.accent { background: #e0dfd8; }
+      .metric-label { color: #888780; }
+      .metric.accent .metric-label { color: #73726c; }
+      .metric-value { color: #e0dfd8; }
+      .metric.accent .metric-value { color: #1a1a18; }
+      .section-title { color: #5f5e5a; }
+      .control-label { color: #888780; }
+      .text-input-wrap { border-color: rgba(255,255,255,0.15); background: #333330; }
+      .text-input-wrap.has-input { border-color: #3b6d11; }
+      .input-prefix { background: #2a2a28; border-color: rgba(255,255,255,0.1); color: #888780; }
+      .text-input-wrap input[type="number"],
+      .text-input-wrap input[type="text"] { color: #e0dfd8; background: #333330; }
+      .toggle-track { background: #444441; }
+      .toggle input:checked + .toggle-track { background: #e0dfd8; }
+      .toggle-thumb { background: #2a2a28; }
+      .toggle-val { color: #888780; }
+      .person-block { border-color: rgba(255,255,255,0.08); }
+      .onboarding-label { color: #888780; }
+      .divider { border-color: rgba(255,255,255,0.08); }
+      .result-row { background: #333330; }
+      .result-row.head-row { background: #2a2a28; border-color: rgba(255,255,255,0.08); }
+      .result-name { color: #e0dfd8; }
+      .result-sub { color: #888780; }
+      .result-pct { color: #e0dfd8; }
+      .result-amount { color: #888780; }
+      .result-restant { color: #97c459; }
+      .badge-onboarding { background: #633806; color: #fac775; }
+      .totaal-block { border-color: rgba(255,255,255,0.08); }
+      .totaal-row-item span { color: #888780; }
+      .totaal-row-item strong { color: #e0dfd8; }
+      .idle-state { background: #333330; color: #888780; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="/Fee-Calculator-BURG/" class="back">‹ Terug</a>
+    <h1>BURG — plaatsing calculator</h1>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Dealwaarde</div>
+        <div class="metric-value" id="out-deal">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Aanbetaling</div>
+        <div class="metric-value" id="out-aanbetaling">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Al voldaan</div>
+        <div class="metric-value" id="out-al">—</div>
+      </div>
+      <div class="metric accent">
+        <div class="metric-label">Nog te betalen</div>
+        <div class="metric-value" id="out-restant">—</div>
+      </div>
+    </div>
+
+    <div class="layout-cols">
+      <div>
+        <div class="section-title">Plaatsing</div>
+        <div class="controls">
+
+          <div class="control-row">
+            <span class="control-label">Dealwaarde (excl. BTW)</span>
+            <div class="text-input-wrap" id="wrap-deal">
+              <span class="input-prefix">€</span>
+              <input type="number" id="inp-deal" placeholder="bijv. 15.000" min="0" step="500" oninput="calc()">
+            </div>
+          </div>
+
+          <div class="control-row">
+            <span class="control-label">Aanbetaling</span>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="tog-aanbetaling" onchange="calc()">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+              <span class="toggle-val" id="lbl-aanbetaling">Nee &mdash; &euro;&nbsp;0</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="section-title">Sales officer</div>
+        <div class="person-block">
+          <div class="person-name-row">
+            <div class="text-input-wrap">
+              <input type="text" id="naam-sales" placeholder="Naam" oninput="calc()">
+            </div>
+          </div>
+          <div class="onboarding-row">
+            <label class="toggle">
+              <input type="checkbox" id="ob-sales" onchange="calc()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+            <span class="onboarding-label">In onboarding → 20% naar Head of Sales</span>
+          </div>
+        </div>
+
+      </div>
+      <div>
+
+        <div class="section-title">Recruiter</div>
+        <div class="person-block">
+          <div class="person-name-row">
+            <div class="text-input-wrap">
+              <input type="text" id="naam-rec" placeholder="Naam" oninput="calc()">
+            </div>
+          </div>
+          <div class="onboarding-row">
+            <label class="toggle">
+              <input type="checkbox" id="ob-rec" onchange="calc()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+            <span class="onboarding-label">In onboarding → 20% naar Head of Recruitment</span>
+          </div>
+        </div>
+
+        <div class="section-title">Consultant</div>
+        <div class="person-block">
+          <div class="person-name-row">
+            <div class="text-input-wrap">
+              <input type="text" id="naam-con" placeholder="Naam" oninput="calc()">
+            </div>
+          </div>
+          <div class="onboarding-row">
+            <label class="toggle">
+              <input type="checkbox" id="ob-con" onchange="calc()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+            <span class="onboarding-label">In onboarding → 20% naar Head of Recruitment</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider" style="margin-top: 1.25rem;"></div>
+    <div id="results-wrap">
+      <div class="idle-state">Vul een dealwaarde in om de verdeling te berekenen</div>
+    </div>
+
+  </div>
+
+  <script>
+    function fmt(n) {
+      return '\u20ac\u00a0' + Math.round(n).toLocaleString('nl-NL');
+    }
+    function fmtPct(n) {
+      return (Math.round(n * 10) / 10).toLocaleString('nl-NL') + '%';
+    }
+
+    function calc() {
+      const deal = parseFloat(document.getElementById('inp-deal').value) || 0;
+      const heeftAanbetaling = document.getElementById('tog-aanbetaling').checked;
+      const aanbetaling = heeftAanbetaling ? 5000 : 0;
+
+      const salesNaam = document.getElementById('naam-sales').value || 'Sales officer';
+      const recNaam   = document.getElementById('naam-rec').value   || 'Recruiter';
+      const conNaam   = document.getElementById('naam-con').value   || 'Consultant';
+      const obSales   = document.getElementById('ob-sales').checked;
+      const obRec     = document.getElementById('ob-rec').checked;
+      const obCon     = document.getElementById('ob-con').checked;
+
+      document.getElementById('lbl-aanbetaling').textContent = heeftAanbetaling ? 'Ja \u2014 \u20ac\u00a05.000' : 'Nee \u2014 \u20ac\u00a00';
+
+      const wrap = document.getElementById('wrap-deal');
+      wrap.className = deal > 0 ? 'text-input-wrap has-input' : 'text-input-wrap';
+
+      if (deal <= 0) {
+        document.getElementById('out-deal').textContent      = '\u2014';
+        document.getElementById('out-aanbetaling').textContent = '\u2014';
+        document.getElementById('out-al').textContent        = '\u2014';
+        document.getElementById('out-restant').textContent   = '\u2014';
+        document.getElementById('results-wrap').innerHTML    = '<div class="idle-state">Vul een dealwaarde in om de verdeling te berekenen</div>';
+        return;
+      }
+
+      // Bruto aandelen
+      const salesBruto = deal * 0.30;
+      const recBruto   = deal * 0.30;
+      const conBruto   = deal * 0.40;
+
+      // Onboarding afdrachten
+      const salesAfdracht = obSales ? salesBruto * 0.20 : 0;
+      const recAfdracht   = obRec   ? recBruto   * 0.20 : 0;
+      const conAfdracht   = obCon   ? conBruto   * 0.20 : 0;
+
+      // Netto per persoon
+      const salesNetto = salesBruto - salesAfdracht;
+      const recNetto   = recBruto   - recAfdracht;
+      const conNetto   = conBruto   - conAfdracht;
+
+      // Aanbetaling verdeling
+      const salesAl = aanbetaling > 0 ? aanbetaling * 0.50 : 0;
+      const conAl   = aanbetaling > 0 ? aanbetaling * 0.50 : 0;
+      const recAl   = 0;
+
+      // Nog te ontvangen
+      const salesRestant = salesNetto - salesAl;
+      const recRestant   = recNetto   - recAl;
+      const conRestant   = conNetto   - conAl;
+
+      // Head of
+      const headSalesBedrag = salesAfdracht;
+      const headRecBedrag   = recAfdracht + conAfdracht;
+
+      const totaalRestant = salesRestant + recRestant + conRestant + headSalesBedrag + headRecBedrag;
+
+      // Update metrics
+      document.getElementById('out-deal').textContent        = fmt(deal);
+      document.getElementById('out-aanbetaling').textContent = aanbetaling > 0 ? fmt(aanbetaling) : '\u2014';
+      document.getElementById('out-al').textContent          = aanbetaling > 0 ? fmt(aanbetaling) : fmt(0);
+      document.getElementById('out-restant').textContent     = fmt(totaalRestant);
+
+      // Build results
+      function row(naam, rol, netto, al, restant, pctVanDeal, onboarding, afdrachtLabel) {
+        const heeftAl = aanbetaling > 0 && al > 0;
+        const subParts = [];
+        if (onboarding) subParts.push(afdrachtLabel);
+        if (heeftAl) subParts.push('al ontvangen: ' + fmt(al));
+        return `
+        <div class="result-row">
+          <div class="result-left">
+            <div class="result-name">${naam}${onboarding ? '<span class="badge-onboarding">onboarding</span>' : ''}</div>
+            <div class="result-sub">${rol}${subParts.length ? ' &middot; ' + subParts.join(' &middot; ') : ''}</div>
+          </div>
+          <div class="result-right">
+            <div class="result-pct">${fmtPct(pctVanDeal)}</div>
+            <div class="result-amount">${fmt(netto)} totaal</div>
+            <div class="result-restant">+ ${fmt(restant)} te ontvangen</div>
+          </div>
+        </div>`;
+      }
+
+      function headRow(naam, bedrag, omschrijving) {
+        return `
+        <div class="result-row head-row">
+          <div class="result-left">
+            <div class="result-name">${naam}</div>
+            <div class="result-sub">${omschrijving}</div>
+          </div>
+          <div class="result-right">
+            <div class="result-pct">${fmtPct((bedrag / deal) * 100)}</div>
+            <div class="result-restant">+ ${fmt(bedrag)} te ontvangen</div>
+          </div>
+        </div>`;
+      }
+
+      let html = '<div class="results">';
+      html += row(salesNaam, 'Sales officer', salesNetto, salesAl, salesRestant, (salesNetto/deal)*100, obSales, '20% → Head of Sales');
+      html += row(recNaam,   'Recruiter',     recNetto,   recAl,   recRestant,   (recNetto/deal)*100,   obRec,   '20% → Head of Recruitment');
+      html += row(conNaam,   'Consultant',    conNetto,   conAl,   conRestant,   (conNetto/deal)*100,   obCon,   '20% → Head of Recruitment');
+
+      if (headSalesBedrag > 0) {
+        html += headRow('Head of Sales', headSalesBedrag, 'Onboarding afdracht van ' + salesNaam);
+      }
+      if (headRecBedrag > 0) {
+        const parts = [];
+        if (recAfdracht > 0) parts.push(recNaam);
+        if (conAfdracht > 0) parts.push(conNaam);
+        html += headRow('Head of Recruitment', headRecBedrag, 'Onboarding afdracht van ' + parts.join(' & '));
+      }
+
+      html += `<div class="totaal-block">`;
+      if (aanbetaling > 0) {
+        html += `<div class="totaal-row-item"><span>Aanbetaling (al voldaan)</span><strong>${fmt(aanbetaling)}</strong></div>`;
+      }
+      html += `<div class="totaal-row-item"><span>Nog te betalen</span><strong>${fmt(totaalRestant)}</strong></div>`;
+      html += `<div class="totaal-row-item"><span>Dealwaarde totaal</span><strong>${fmt(deal)}</strong></div>`;
+      html += `</div>`;
+      html += '</div>';
+
+      document.getElementById('results-wrap').innerHTML = html;
+    }
+
+    calc();
+  </script>
+</body>
+</html>

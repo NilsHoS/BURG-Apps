@@ -81,6 +81,7 @@
 
     .tool-icon.fee { background: #4169a0; }
     .tool-icon.hon { background: #1a1a18; }
+    .tool-icon.pla { background: #2d6a4f; }
 
     .tool-text { flex: 1; }
     .tool-name { font-size: 15px; font-weight: 500; color: #1a1a18; margin-bottom: 2px; }
@@ -91,7 +92,7 @@
 
     /* Desktop */
     @media (min-width: 640px) {
-      .tools { max-width: 680px; flex-direction: row; }
+      .tools { max-width: 900px; flex-direction: row; }
       .tool-card { flex-direction: column; align-items: flex-start; padding: 1.5rem; flex: 1; }
       .tool-arrow { display: none; }
       .tool-icon { width: 52px; height: 52px; margin-bottom: 0.75rem; }
@@ -156,6 +157,23 @@
       <div class="tool-text">
         <div class="tool-name">Honorarium tool</div>
         <div class="tool-desc">Bereken het honorarium bij plaatsing</div>
+      </div>
+      <span class="tool-arrow">›</span>
+    </a>
+
+    <a href="/Fee-Calculator-BURG/plaatsing-verdeling.html" class="tool-card">
+      <div class="tool-icon pla">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <circle cx="13" cy="13" r="9" stroke="white" stroke-width="1.5"/>
+          <path d="M13 13L13 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M13 13L20.8 17.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M13 13L5.2 17.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="13" cy="13" r="2" fill="white"/>
+        </svg>
+      </div>
+      <div class="tool-text">
+        <div class="tool-name">Plaatsing calculator</div>
+        <div class="tool-desc">Verdeel de opbrengst na plaatsing</div>
       </div>
       <span class="tool-arrow">›</span>
     </a>
