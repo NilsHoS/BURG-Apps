@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="BURG Plaatsing">
   <link rel="manifest" href="/BURG-Apps/manifest.json">
   <link rel="apple-touch-icon" href="/BURG-Apps/icon-192.png">
-  <title>BURG — Plaatsing calculator</title>
+  <title>Provisie Calculator W&S Plaatsing</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -66,11 +66,21 @@
       font-size: 11px; font-weight: 500; color: #b4b2a9;
       text-transform: uppercase; letter-spacing: 0.06em;
       margin: 1.25rem 0 0.75rem;
+      display: flex; align-items: center; gap: 5px;
     }
+
+    .required-banner {
+      background: #faeeda; border-radius: 10px; padding: 10px 14px;
+      font-size: 13px; color: #854f0b; margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .required-banner.hidden { display: none; }
 
     .controls { display: flex; flex-direction: column; gap: 14px; margin-bottom: 1.25rem; }
     .control-row { display: flex; flex-direction: column; gap: 6px; }
-    .control-label { font-size: 12px; color: #73726c; font-weight: 500; }
+    .control-label { font-size: 12px; color: #73726c; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+    .required-dot { width: 6px; height: 6px; background: #ef9f27; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .required-dot.filled { background: #3b6d11; }
     .control-input { display: flex; align-items: center; gap: 10px; }
 
     .text-input-wrap {
@@ -78,6 +88,7 @@
       border: 1.5px solid rgba(0,0,0,0.15); border-radius: 8px;
       overflow: hidden; background: #fff; transition: border-color 0.2s;
     }
+    .text-input-wrap.needs-input { border-color: #ef9f27; }
     .text-input-wrap.has-input { border-color: #3b6d11; }
 
     .input-prefix {
@@ -176,7 +187,9 @@
       .metric.accent .metric-value { color: #1a1a18; }
       .section-title { color: #5f5e5a; }
       .control-label { color: #888780; }
+      .required-banner { background: #633806; color: #fac775; }
       .text-input-wrap { border-color: rgba(255,255,255,0.15); background: #333330; }
+      .text-input-wrap.needs-input { border-color: #ef9f27; }
       .text-input-wrap.has-input { border-color: #3b6d11; }
       .input-prefix { background: #2a2a28; border-color: rgba(255,255,255,0.1); color: #888780; }
       .text-input-wrap input[type="number"],
@@ -206,7 +219,16 @@
 <body>
   <div class="card">
     <a href="/BURG-Apps/" class="back">‹ Terug</a>
-    <h1>BURG — plaatsing calculator</h1>
+    <h1>Provisie Calculator W&S Plaatsing</h1>
+
+    <div class="required-banner" id="banner">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="7" stroke="#854f0b" stroke-width="1.5"/>
+        <path d="M8 5V8.5" stroke="#854f0b" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="8" cy="11" r="0.75" fill="#854f0b"/>
+      </svg>
+      Vul dealwaarde én alle namen in om de verdeling te berekenen
+    </div>
 
     <div class="metrics">
       <div class="metric">
@@ -233,8 +255,11 @@
         <div class="controls">
 
           <div class="control-row">
-            <span class="control-label">Dealwaarde (excl. BTW)</span>
-            <div class="text-input-wrap" id="wrap-deal">
+            <span class="control-label">
+              <span class="required-dot" id="dot-deal"></span>
+              Dealwaarde (excl. BTW)
+            </span>
+            <div class="text-input-wrap needs-input" id="wrap-deal">
               <span class="input-prefix">€</span>
               <input type="number" id="inp-deal" placeholder="bijv. 15.000" min="0" step="500" oninput="calc()">
             </div>
@@ -254,10 +279,10 @@
 
         </div>
 
-        <div class="section-title">Sales officer</div>
+        <div class="section-title"><span class="required-dot" id="dot-sales"></span>Sales officer</div>
         <div class="person-block">
           <div class="person-name-row">
-            <div class="text-input-wrap">
+            <div class="text-input-wrap needs-input" id="wrap-sales">
               <input type="text" id="naam-sales" placeholder="Naam" oninput="calc()">
             </div>
           </div>
@@ -274,10 +299,10 @@
       </div>
       <div>
 
-        <div class="section-title">Recruiter</div>
+        <div class="section-title"><span class="required-dot" id="dot-rec"></span>Recruiter</div>
         <div class="person-block">
           <div class="person-name-row">
-            <div class="text-input-wrap">
+            <div class="text-input-wrap needs-input" id="wrap-rec">
               <input type="text" id="naam-rec" placeholder="Naam" oninput="calc()">
             </div>
           </div>
@@ -291,10 +316,10 @@
           </div>
         </div>
 
-        <div class="section-title">Consultant</div>
+        <div class="section-title"><span class="required-dot" id="dot-con"></span>Consultant</div>
         <div class="person-block">
           <div class="person-name-row">
-            <div class="text-input-wrap">
+            <div class="text-input-wrap needs-input" id="wrap-con">
               <input type="text" id="naam-con" placeholder="Naam" oninput="calc()">
             </div>
           </div>
@@ -341,7 +366,22 @@
       document.getElementById('lbl-aanbetaling').textContent = heeftAanbetaling ? 'Ja \u2014 \u20ac\u00a05.000' : 'Nee \u2014 \u20ac\u00a00';
 
       const wrap = document.getElementById('wrap-deal');
-      wrap.className = deal > 0 ? 'text-input-wrap has-input' : 'text-input-wrap';
+      wrap.className = deal > 0 ? 'text-input-wrap has-input' : 'text-input-wrap needs-input';
+      document.getElementById('dot-deal').className = deal > 0 ? 'required-dot filled' : 'required-dot';
+
+      const nameFields = [
+        { wrap: 'wrap-sales', dot: 'dot-sales', val: document.getElementById('naam-sales').value },
+        { wrap: 'wrap-rec',   dot: 'dot-rec',   val: document.getElementById('naam-rec').value },
+        { wrap: 'wrap-con',   dot: 'dot-con',   val: document.getElementById('naam-con').value },
+      ];
+      nameFields.forEach(f => {
+        const filled = f.val.trim().length > 0;
+        document.getElementById(f.wrap).className = filled ? 'text-input-wrap has-input' : 'text-input-wrap needs-input';
+        document.getElementById(f.dot).className  = filled ? 'required-dot filled' : 'required-dot';
+      });
+
+      const allFilled = deal > 0 && nameFields.every(f => f.val.trim().length > 0);
+      document.getElementById('banner').classList.toggle('hidden', allFilled);
 
       if (deal <= 0) {
         document.getElementById('out-deal').textContent      = '\u2014';
