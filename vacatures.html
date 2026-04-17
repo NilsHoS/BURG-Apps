@@ -175,6 +175,15 @@
   .fly-left { animation: flyLeft 0.35s ease forwards; }
   .fly-right { animation: flyRight 0.35s ease forwards; }
   .fly-up { animation: flyUp 0.3s ease forwards; }
+
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); gap: 14px; color: var(--text-muted); font-size: 14px; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--surface2); border-top-color: var(--blue-light); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); gap: 10px; text-align: center; }
+  .error-msg span { font-size: 36px; }
+  .error-msg p { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+  .card-link { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--blue-light); text-decoration: none; margin-top: 8px; opacity: 0.8; }
+  .card-link:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -186,7 +195,7 @@
   <div class="stats">
     <div class="stat"><strong id="count-go">0</strong>Go</div>
     <div class="stat"><strong id="count-nogo">0</strong>No go</div>
-    <div class="stat"><strong id="count-left">8</strong>Over</div>
+    <div class="stat"><strong id="count-left">—</strong>Over</div>
   </div>
 </div>
 
@@ -219,54 +228,92 @@
   <div id="log-list"><p style="font-size:12px;color:var(--text-muted)">Nog geen beslissingen.</p></div>
 </div>
 
-<script>
-const vacatures = [
-  { bedrijf:"Damen Shipyards", functie:"QHSSE Manager", locatie:"Gorinchem", salaris:"€ 6.800 / mnd", salarisRaw:6800, sector:"Industrie / Manufacturing", tier:"A", route:"senior", score:88 },
-  { bedrijf:"Aviko B.V.", functie:"HSE Coördinator", locatie:"Steenderen", salaris:"€ 4.600 / mnd", salarisRaw:4600, sector:"Food & Beverage", tier:"A", route:"medior", score:72 },
-  { bedrijf:"Strukton Rail", functie:"Head of SHEQ", locatie:"Utrecht", salaris:"€ 7.400 / mnd", salarisRaw:7400, sector:"Infra / Bouw", tier:"B", route:"senior", score:81 },
-  { bedrijf:"Vion Food Group", functie:"Quality Manager", locatie:"Boxtel", salaris:"Onbekend", salarisRaw:null, sector:"Food & Beverage", tier:"A", route:"medior", score:65 },
-  { bedrijf:"Van Oord", functie:"EHS Adviseur", locatie:"Rotterdam", salaris:"€ 5.200 / mnd", salarisRaw:5200, sector:"Energie / Logistiek", tier:"B", route:"medior", score:76 },
-  { bedrijf:"Renewi Nederland", functie:"QHSSE Coördinator", locatie:"Amersfoort", salaris:"€ 4.100 / mnd", salarisRaw:4100, sector:"Milieu / Logistiek", tier:"B", route:"onboarding", score:54 },
-  { bedrijf:"Royal Cosun", functie:"Compliance Manager QHSSE", locatie:"Breda", salaris:"€ 6.100 / mnd", salarisRaw:6100, sector:"Food & Beverage", tier:"A", route:"senior", score:83 },
-  { bedrijf:"BAM Infra", functie:"Safety Officer", locatie:"Bunnik", salaris:"€ 3.900 / mnd", salarisRaw:3900, sector:"Infra / Bouw", tier:"B", route:"onboarding", score:48 }
-];
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-const total = vacatures.length;
+const supabase = createClient(
+  'https://ziwqshuabwcthqjspuso.supabase.co',
+  'sb_publishable_PxbxG-9ArQCsrgF9-lAM8g_-uglxVYU'
+);
+
+let vacatures = [];
+let total = 0;
 let current = 0, decisions = [], activeCard = null;
 
-function tierClass(t) { return t==='A'?'tier-a':t==='B'?'tier-b':'tier-c'; }
-function routeColor(r) { return r==='senior'?'#9b5de5':r==='medior'?'#2d7dd2':'#f4a261'; }
-function scoreColor(s) { return s>=75?'#1db954':s>=55?'#f4a261':'#e63946'; }
-function routeLabel(r) { return r==='senior'?'Senior consultant':r==='medior'?'Medior consultant':'Onboarding'; }
+function mapRow(row) {
+  return {
+    id: row.id,
+    bedrijf: row.company_name || '—',
+    functie: row.job_title || '—',
+    locatie: row.job_location || '—',
+    bron: row.data_source || null,
+    url: row.job_url || null,
+    datumGescraped: row.date_scraped ? new Date(row.date_scraped).toLocaleDateString('nl-NL') : null,
+  };
+}
 
 function buildCard(vac, zIndex, cls) {
   const div = document.createElement('div');
-  div.className = 'card '+(cls||'');
+  div.className = 'card ' + (cls || '');
   div.style.zIndex = zIndex;
-  const salaryClass = vac.salarisRaw===null?'unknown':'salary';
-  const warn = vac.salarisRaw!==null && vac.salarisRaw<3750 ? ' ⚠️':'';
+
+  const metaExtra = [
+    vac.bron ? `<div class="meta-item"><span class="meta-label">🔍 Bron</span><span class="meta-value">${vac.bron}</span></div>` : '',
+    vac.datumGescraped ? `<div class="meta-item"><span class="meta-label">📅 Gevonden</span><span class="meta-value">${vac.datumGescraped}</span></div>` : '',
+  ].join('');
+
+  const linkHtml = vac.url
+    ? `<a class="card-link" href="${vac.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Bekijk vacature</a>`
+    : '';
+
   div.innerHTML = `
     <div class="stamp go">GO</div>
     <div class="stamp nogo">NO GO</div>
-    <div class="card-tier ${tierClass(vac.tier)}"><span>Tier ${vac.tier}</span><span>·</span><span>${vac.sector}</span></div>
     <div class="card-company">${vac.bedrijf}</div>
     <div class="card-role">${vac.functie}</div>
     <div class="card-divider"></div>
     <div class="card-meta">
       <div class="meta-item"><span class="meta-label">📍 Locatie</span><span class="meta-value">${vac.locatie}</span></div>
-      <div class="meta-item"><span class="meta-label">💶 Salaris</span><span class="meta-value ${salaryClass}">${vac.salaris}${warn}</span></div>
-      <div class="meta-item"><span class="meta-label">🏭 Sector</span><span class="meta-value">${vac.sector}</span></div>
-      <div class="meta-item"><span class="meta-label">👤 Routing</span><span class="meta-value" style="color:${routeColor(vac.route)}">${routeLabel(vac.route)}</span></div>
+      ${metaExtra}
     </div>
-    <div class="score-section">
-      <div class="score-header">
-        <span class="score-label">Relevantiescore</span>
-        <span class="score-number" style="color:${scoreColor(vac.score)}">${vac.score}/100</span>
-      </div>
-      <div class="score-track"><div class="score-fill" style="width:${vac.score}%;background:${scoreColor(vac.score)}"></div></div>
-      <div class="routing-badge"><div class="routing-dot" style="background:${routeColor(vac.route)}"></div>Naar ${routeLabel(vac.route)}</div>
-    </div>`;
+    ${linkHtml}`;
   return div;
+}
+
+function showLoading() {
+  const stack = document.getElementById('stack');
+  stack.innerHTML = '<div class="loading"><div class="spinner"></div><span>Vacatures laden…</span></div>';
+  stack.style.display = '';
+  document.getElementById('hint').style.display = 'none';
+  document.getElementById('actions').style.display = 'none';
+}
+
+function showError(msg) {
+  const stack = document.getElementById('stack');
+  stack.innerHTML = `<div class="error-msg"><span>⚠️</span><p>${msg}</p></div>`;
+}
+
+async function loadVacatures() {
+  showLoading();
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('id, job_title, company_name, job_location, job_url, data_source, date_scraped')
+    .eq('review_status', 'new')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    showError('Kon vacatures niet laden.<br>' + error.message);
+    return;
+  }
+
+  vacatures = data.map(mapRow);
+  total = vacatures.length;
+  current = 0;
+  decisions = [];
+
+  document.getElementById('hint').style.display = '';
+  document.getElementById('actions').style.display = '';
+  renderStack();
 }
 
 function renderStack() {
@@ -279,32 +326,42 @@ function renderStack() {
     document.getElementById('actions').style.display = 'none';
     return;
   }
-  for (let i = Math.min(current+2, total-1); i >= current; i--) {
+  for (let i = Math.min(current + 2, total - 1); i >= current; i--) {
     const offset = i - current;
-    const cls = offset===0?'':offset===1?'behind-1':'behind-2';
-    const card = buildCard(vacatures[i], 10-offset, cls);
+    const cls = offset === 0 ? '' : offset === 1 ? 'behind-1' : 'behind-2';
+    const card = buildCard(vacatures[i], 10 - offset, cls);
     stack.appendChild(card);
-    if (offset===0) { activeCard = card; setupDrag(card); }
+    if (offset === 0) { activeCard = card; setupDrag(card); }
   }
   updateStats();
 }
 
 function updateStats() {
-  document.getElementById('count-go').textContent = decisions.filter(d=>d.action==='go').length;
-  document.getElementById('count-nogo').textContent = decisions.filter(d=>d.action==='nogo').length;
+  document.getElementById('count-go').textContent = decisions.filter(d => d.action === 'go').length;
+  document.getElementById('count-nogo').textContent = decisions.filter(d => d.action === 'nogo').length;
   document.getElementById('count-left').textContent = total - current;
-  document.getElementById('progress').style.width = (current/total*100)+'%';
+  document.getElementById('progress').style.width = (current / total * 100) + '%';
+}
+
+async function saveDecision(vac, action) {
+  const statusMap = { go: 'approved', nogo: 'rejected', skip: 'new' };
+  if (action === 'skip') return;
+  await supabase
+    .from('jobs')
+    .update({ review_status: statusMap[action], reviewed_at: new Date().toISOString() })
+    .eq('id', vac.id);
 }
 
 function doAction(action) {
   if (current >= total || !activeCard) return;
   const vac = vacatures[current];
-  decisions.push({vac, action});
+  decisions.push({ vac, action });
   addLog(vac, action);
-  const animClass = action==='go'?'fly-right':action==='nogo'?'fly-left':'fly-up';
+  saveDecision(vac, action);
+  const animClass = action === 'go' ? 'fly-right' : action === 'nogo' ? 'fly-left' : 'fly-up';
   activeCard.classList.add(animClass);
-  if (action==='go') { const s=activeCard.querySelector('.stamp.go'); if(s) s.style.opacity='1'; }
-  if (action==='nogo') { const s=activeCard.querySelector('.stamp.nogo'); if(s) s.style.opacity='1'; }
+  if (action === 'go') { const s = activeCard.querySelector('.stamp.go'); if (s) s.style.opacity = '1'; }
+  if (action === 'nogo') { const s = activeCard.querySelector('.stamp.nogo'); if (s) s.style.opacity = '1'; }
   setTimeout(() => { current++; renderStack(); }, 320);
 }
 
@@ -312,39 +369,39 @@ function setupDrag(card) {
   let startX, startY, dragging = false;
   function onStart(e) {
     dragging = true;
-    const pt = e.touches?e.touches[0]:e;
+    const pt = e.touches ? e.touches[0] : e;
     startX = pt.clientX; startY = pt.clientY;
     card.style.transition = 'none';
   }
   function onMove(e) {
     if (!dragging) return;
     e.preventDefault();
-    const pt = e.touches?e.touches[0]:e;
+    const pt = e.touches ? e.touches[0] : e;
     const dx = pt.clientX - startX;
     const dy = pt.clientY - startY;
-    card.style.transform = `translateX(${dx}px) translateY(${dy*0.3}px) rotate(${dx*0.08}deg)`;
+    card.style.transform = `translateX(${dx}px) translateY(${dy * 0.3}px) rotate(${dx * 0.08}deg)`;
     const sg = card.querySelector('.stamp.go');
     const sn = card.querySelector('.stamp.nogo');
-    if (sg) sg.style.opacity = dx>30 ? Math.min((dx-30)/80,1) : 0;
-    if (sn) sn.style.opacity = dx<-30 ? Math.min((-dx-30)/80,1) : 0;
+    if (sg) sg.style.opacity = dx > 30 ? Math.min((dx - 30) / 80, 1) : 0;
+    if (sn) sn.style.opacity = dx < -30 ? Math.min((-dx - 30) / 80, 1) : 0;
   }
   function onEnd(e) {
     if (!dragging) return;
     dragging = false;
-    const pt = e.changedTouches?e.changedTouches[0]:e;
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
     const dx = pt.clientX - startX;
     card.style.transition = '';
     if (dx > 80) doAction('go');
     else if (dx < -80) doAction('nogo');
     else {
       card.style.transform = '';
-      card.querySelectorAll('.stamp').forEach(s => s.style.opacity=0);
+      card.querySelectorAll('.stamp').forEach(s => s.style.opacity = 0);
     }
   }
   card.addEventListener('mousedown', onStart);
-  card.addEventListener('touchstart', onStart, {passive:true});
+  card.addEventListener('touchstart', onStart, { passive: true });
   window.addEventListener('mousemove', onMove);
-  window.addEventListener('touchmove', onMove, {passive:false});
+  window.addEventListener('touchmove', onMove, { passive: false });
   window.addEventListener('mouseup', onEnd);
   window.addEventListener('touchend', onEnd);
 }
@@ -354,26 +411,25 @@ function addLog(vac, action) {
   if (list.querySelector('p')) list.innerHTML = '';
   const item = document.createElement('div');
   item.className = 'log-item';
-  const dotClass = action==='go'?'log-go':action==='nogo'?'log-nogo':'log-skip';
-  const dotColor = action==='go'?'#1db954':action==='nogo'?'#e63946':'#8888a0';
-  const label = action==='go'?'Go':action==='nogo'?'No go':'Later';
+  const dotColor = action === 'go' ? '#1db954' : action === 'nogo' ? '#e63946' : '#8888a0';
+  const label = action === 'go' ? 'Go' : action === 'nogo' ? 'No go' : 'Later';
   item.innerHTML = `<div class="log-dot" style="background:${dotColor}"></div><span><strong>${vac.bedrijf}</strong> — ${label}</span>`;
   list.insertBefore(item, list.firstChild);
 }
 
 function toggleLog() { document.getElementById('log-panel').classList.toggle('open'); }
 
-function resetDeck() {
-  current = 0; decisions = [];
+async function resetDeck() {
   document.getElementById('log-list').innerHTML = '<p style="font-size:12px;color:var(--text-muted)">Nog geen beslissingen.</p>';
-  document.getElementById('stack').style.display = '';
   document.getElementById('empty').style.display = 'none';
-  document.getElementById('hint').style.display = '';
-  document.getElementById('actions').style.display = '';
-  renderStack();
+  await loadVacatures();
 }
 
-renderStack();
+window.doAction = doAction;
+window.toggleLog = toggleLog;
+window.resetDeck = resetDeck;
+
+loadVacatures();
 </script>
 </body>
 </html>
