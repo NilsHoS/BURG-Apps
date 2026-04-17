@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>BURG Pipeline</title>
+<link rel="apple-touch-icon" href="/BURG-Apps/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #0f3460;
+    --blue-mid: #1a4f8c;
+    --blue-light: #2d7dd2;
+    --go: #1db954;
+    --nogo: #e63946;
+    --amber: #f4a261;
+    --purple: #9b5de5;
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f5;
+    --text-muted: #8888a0;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  .header {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 10px;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); letter-spacing: -0.5px; }
+  .logo span { color: var(--blue-light); }
+
+  .stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat strong { font-size: 16px; color: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; }
+
+  .filters {
+    width: 100%;
+    max-width: 700px;
+    padding: 0 20px 14px;
+    display: flex;
+    gap: 8px;
+  }
+  .filter-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn.active { background: var(--blue-light); border-color: var(--blue-light); color: white; }
+  .filter-btn:hover:not(.active) { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  .list {
+    width: 100%;
+    max-width: 700px;
+    padding: 0 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .vacancy-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: border-color 0.15s;
+  }
+  .vacancy-card:hover { border-color: rgba(255,255,255,0.14); }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 17px; line-height: 1.2; }
+  .card-company { font-size: 13px; color: var(--blue-light); font-weight: 500; margin-top: 3px; }
+
+  .status-badge {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+  }
+  .status-approved { background: rgba(29,185,84,0.15); color: var(--go); }
+  .status-in_behandeling { background: rgba(45,125,210,0.15); color: var(--blue-light); }
+
+  .card-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+  .meta-chip {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .meta-chip a { color: var(--blue-light); text-decoration: none; }
+  .meta-chip a:hover { text-decoration: underline; }
+
+  .recruiter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .recruiter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+  .recruiter-assigned { font-size: 13px; color: var(--purple); font-weight: 500; }
+
+  .actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .recruiter-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 10px;
+    cursor: pointer;
+    outline: none;
+    flex: 1;
+    min-width: 140px;
+    max-width: 200px;
+  }
+  .recruiter-select:focus { border-color: var(--blue-light); }
+  .recruiter-select option { background: #1c1c27; }
+
+  .action-btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .action-btn:active { transform: scale(0.97); }
+  .action-btn:hover { opacity: 0.85; }
+  .action-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .btn-assign { background: rgba(155,93,229,0.15); border-color: rgba(155,93,229,0.4); color: var(--purple); }
+  .btn-behandeling { background: rgba(45,125,210,0.15); border-color: rgba(45,125,210,0.4); color: var(--blue-light); }
+  .btn-done { background: rgba(29,185,84,0.15); border-color: rgba(29,185,84,0.4); color: var(--go); }
+
+  .loading-state, .empty-state {
+    width: 100%;
+    max-width: 700px;
+    padding: 80px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+  }
+  .empty-state span { font-size: 40px; margin-bottom: 4px; }
+
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--surface2); border-top-color: var(--blue-light); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text);
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .back-link { position: fixed; top: 18px; left: 16px; font-size: 12px; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 4px; z-index: 200; }
+  .back-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="/BURG-Apps/">← Terug</a>
+
+<div class="header">
+  <div class="logo">BURG <span>Pipeline</span></div>
+  <div class="stats">
+    <div class="stat"><strong id="count-approved">—</strong>Goedgekeurd</div>
+    <div class="stat"><strong id="count-behandeling">—</strong>In behandeling</div>
+  </div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Alle</button>
+  <button class="filter-btn" data-filter="approved" onclick="setFilter('approved')">Goedgekeurd</button>
+  <button class="filter-btn" data-filter="in_behandeling" onclick="setFilter('in_behandeling')">In behandeling</button>
+</div>
+
+<div id="loading" class="loading-state">
+  <div class="spinner"></div>
+  <span>Pipeline laden…</span>
+</div>
+
+<div id="empty" class="empty-state" style="display:none">
+  <span>📭</span>
+  <p>Geen vacatures in deze categorie.</p>
+</div>
+
+<div class="list" id="list" style="display:none"></div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const supabase = createClient(
+  'https://ziwqshuabwcthqjspuso.supabase.co',
+  'sb_publishable_PxbxG-9ArQCsrgF9-lAM8g_-uglxVYU'
+);
+
+const RECRUITERS = ['Max', 'Nils', 'Sander', 'Lisa', 'Petra'];
+
+let allJobs = [];
+let activeFilter = 'all';
+
+async function load() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('list').style.display = 'none';
+  document.getElementById('empty').style.display = 'none';
+
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('id, job_title, company_name, job_location, job_url, data_source, date_scraped, review_status, reviewed_by, reviewed_at')
+    .in('review_status', ['approved', 'in_behandeling'])
+    .order('reviewed_at', { ascending: false });
+
+  document.getElementById('loading').style.display = 'none';
+
+  if (error) {
+    document.getElementById('empty').style.display = 'flex';
+    document.getElementById('empty').innerHTML = '<span>⚠️</span><p>Kon pipeline niet laden.<br>' + error.message + '</p>';
+    return;
+  }
+
+  allJobs = data || [];
+  updateStats();
+  render();
+}
+
+function updateStats() {
+  document.getElementById('count-approved').textContent = allJobs.filter(j => j.review_status === 'approved').length;
+  document.getElementById('count-behandeling').textContent = allJobs.filter(j => j.review_status === 'in_behandeling').length;
+}
+
+function filtered() {
+  if (activeFilter === 'all') return allJobs;
+  return allJobs.filter(j => j.review_status === activeFilter);
+}
+
+function render() {
+  const list = document.getElementById('list');
+  const empty = document.getElementById('empty');
+  const jobs = filtered();
+
+  if (jobs.length === 0) {
+    list.style.display = 'none';
+    empty.style.display = 'flex';
+    empty.innerHTML = '<span>📭</span><p>Geen vacatures in deze categorie.</p>';
+    return;
+  }
+
+  empty.style.display = 'none';
+  list.style.display = 'flex';
+  list.innerHTML = '';
+
+  jobs.forEach(job => list.appendChild(buildCard(job)));
+}
+
+function buildCard(job) {
+  const card = document.createElement('div');
+  card.className = 'vacancy-card';
+  card.dataset.id = job.id;
+
+  const statusLabel = job.review_status === 'in_behandeling' ? 'In behandeling' : 'Goedgekeurd';
+  const statusClass = 'status-' + job.review_status;
+
+  const dateStr = job.date_scraped
+    ? new Date(job.date_scraped).toLocaleDateString('nl-NL')
+    : job.reviewed_at ? new Date(job.reviewed_at).toLocaleDateString('nl-NL') : null;
+
+  const metaChips = [
+    job.job_location ? `<span class="meta-chip">📍 ${job.job_location}</span>` : '',
+    job.data_source ? `<span class="meta-chip">🔍 ${job.data_source}</span>` : '',
+    dateStr ? `<span class="meta-chip">📅 ${dateStr}</span>` : '',
+    job.job_url ? `<span class="meta-chip">↗ <a href="${job.job_url}" target="_blank" rel="noopener">Bekijk vacature</a></span>` : '',
+  ].filter(Boolean).join('');
+
+  const recruiterOptions = RECRUITERS.map(r =>
+    `<option value="${r}" ${job.reviewed_by === r ? 'selected' : ''}>${r}</option>`
+  ).join('');
+
+  const assignedHtml = job.reviewed_by
+    ? `<span class="recruiter-label">Toegewezen aan:</span><span class="recruiter-assigned">👤 ${job.reviewed_by}</span>`
+    : `<span class="recruiter-label">Nog niet toegewezen</span>`;
+
+  const actionBtns = job.review_status === 'approved'
+    ? `<button class="action-btn btn-behandeling" onclick="window.setBehandeling('${job.id}', this)">In behandeling →</button>`
+    : `<button class="action-btn btn-done" onclick="window.setDone('${job.id}', this)">✓ Afgerond</button>`;
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div>
+        <div class="card-title">${job.job_title || '—'}</div>
+        <div class="card-company">${job.company_name || '—'}</div>
+      </div>
+      <span class="status-badge ${statusClass}">${statusLabel}</span>
+    </div>
+    <div class="card-meta">${metaChips}</div>
+    <div class="recruiter-row">${assignedHtml}</div>
+    <div class="actions-row">
+      <select class="recruiter-select" id="sel-${job.id}">
+        <option value="">Kies recruiter…</option>
+        ${recruiterOptions}
+      </select>
+      <button class="action-btn btn-assign" onclick="window.assignRecruiter('${job.id}', this)">Toewijzen</button>
+      ${actionBtns}
+    </div>`;
+
+  return card;
+}
+
+window.setFilter = function(filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+  render();
+};
+
+window.assignRecruiter = async function(id, btn) {
+  const select = document.getElementById('sel-' + id);
+  const recruiter = select.value;
+  if (!recruiter) { showToast('Selecteer eerst een recruiter.'); return; }
+
+  btn.disabled = true;
+  const { error } = await supabase
+    .from('jobs')
+    .update({ reviewed_by: recruiter, reviewed_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) { showToast('Fout bij opslaan: ' + error.message); btn.disabled = false; return; }
+
+  const job = allJobs.find(j => j.id === id);
+  if (job) job.reviewed_by = recruiter;
+
+  const card = document.querySelector(`.vacancy-card[data-id="${id}"]`);
+  if (card) {
+    const row = card.querySelector('.recruiter-row');
+    if (row) row.innerHTML = `<span class="recruiter-label">Toegewezen aan:</span><span class="recruiter-assigned">👤 ${recruiter}</span>`;
+  }
+
+  btn.disabled = false;
+  showToast(`Toegewezen aan ${recruiter}.`);
+};
+
+window.setBehandeling = async function(id, btn) {
+  btn.disabled = true;
+  const { error } = await supabase
+    .from('jobs')
+    .update({ review_status: 'in_behandeling', reviewed_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) { showToast('Fout bij opslaan: ' + error.message); btn.disabled = false; return; }
+
+  const job = allJobs.find(j => j.id === id);
+  if (job) job.review_status = 'in_behandeling';
+  updateStats();
+  render();
+  showToast('Status bijgewerkt: In behandeling.');
+};
+
+window.setDone = async function(id, btn) {
+  btn.disabled = true;
+  const { error } = await supabase
+    .from('jobs')
+    .update({ review_status: 'done', reviewed_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) { showToast('Fout bij opslaan: ' + error.message); btn.disabled = false; return; }
+
+  allJobs = allJobs.filter(j => j.id !== id);
+  updateStats();
+  render();
+  showToast('Vacature afgerond en uit pipeline verwijderd.');
+};
+
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+load();
+</script>
+</body>
+</html>
