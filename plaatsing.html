@@ -88,7 +88,8 @@
       padding: 10px; font-size: 14px; color: #73726c;
       background: #f5f4f0; border-right: 1px solid rgba(0,0,0,0.1); white-space: nowrap;
     }
-    .text-input-wrap input[type="number"] {
+    .text-input-wrap input[type="number"],
+    .text-input-wrap input[type="text"] {
       flex: 1; border: none; outline: none; padding: 10px 12px;
       font-size: 16px; font-weight: 500; color: #1a1a18;
       background: transparent; -moz-appearance: textfield; width: 100%;
@@ -181,7 +182,8 @@
       .text-input-wrap.has-input   { border-color: #3b6d11; }
       .input-prefix { background: #2a2a28; border-color: rgba(255,255,255,0.1); color: #888780; }
       .input-suffix { background: #2a2a28; border-color: rgba(255,255,255,0.1); color: #888780; }
-      .text-input-wrap input[type="number"] { color: #e0dfd8; background: #333330; }
+      .text-input-wrap input[type="number"],
+      .text-input-wrap input[type="text"] { color: #e0dfd8; background: #333330; }
       input[type="range"] { background: #444441; }
       input[type="range"]::-webkit-slider-thumb { background: #e0dfd8; }
       input[type="range"]::-moz-range-thumb { background: #e0dfd8; }
@@ -240,7 +242,7 @@
           </span>
           <div class="text-input-wrap needs-input" id="wrap-salaris">
             <span class="input-prefix">€</span>
-            <input type="number" id="inp-salaris" placeholder="bijv. 5.250" min="0" step="50" oninput="calc()">
+            <input type="text" id="inp-salaris" placeholder="bijv. 5.250" inputmode="decimal" oninput="calc()">
             <span class="input-suffix">/ mnd</span>
           </div>
         </div>
@@ -291,7 +293,7 @@
             Fee percentage
           </span>
           <div class="text-input-wrap needs-input" id="wrap-fee">
-            <input type="number" id="inp-fee" placeholder="bijv. 23" min="0" max="100" step="0.5" oninput="calc()" style="text-align: center;">
+            <input type="text" id="inp-fee" placeholder="bijv. 23" inputmode="decimal" oninput="calc()" style="text-align: center;">
             <span class="input-suffix">%</span>
           </div>
         </div>
@@ -315,13 +317,17 @@
       calc();
     }
 
+    function parseDutch(str) {
+      return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+    }
+
     function fmt(n) {
       return '\u20ac\u00a0' + Math.round(n).toLocaleString('nl-NL');
     }
 
     function calc() {
-      const maand    = parseFloat(document.getElementById('inp-salaris').value) || 0;
-      const feePct   = parseFloat(document.getElementById('inp-fee').value) || 0;
+      const maand    = parseDutch(document.getElementById('inp-salaris').value);
+      const feePct   = parseDutch(document.getElementById('inp-fee').value);
       const vak      = +document.getElementById('sl-vak').value / 100;
       const lease    = document.getElementById('tog-lease').checked ? 6000 : 0;
       const bonusPct = +document.getElementById('sl-bonus').value / 100;
