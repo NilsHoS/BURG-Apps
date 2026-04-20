@@ -121,6 +121,15 @@
     }
     .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
     .toggle-val { font-size: 13px; color: #73726c; }
+    .aanbetaling-btn {
+      padding: 6px 14px; border-radius: 6px; border: 1.5px solid #d0cfc9;
+      background: #fff; font-size: 13px; cursor: pointer; color: #3a3a36;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .aanbetaling-btn.selected {
+      background: #2d7a3a; border-color: #2d7a3a; color: #fff; font-weight: 600;
+    }
+    .aanbetaling-btn:hover:not(.selected) { border-color: #2d7a3a; color: #2d7a3a; }
 
     .person-block {
       border: 0.5px solid rgba(0,0,0,0.10); border-radius: 10px;
@@ -269,11 +278,18 @@
             <span class="control-label">Aanbetaling</span>
             <div class="toggle-wrap">
               <label class="toggle">
-                <input type="checkbox" id="tog-aanbetaling" onchange="calc()">
+                <input type="checkbox" id="tog-aanbetaling" onchange="toggleAanbetaling()">
                 <div class="toggle-track"></div>
                 <div class="toggle-thumb"></div>
               </label>
               <span class="toggle-val" id="lbl-aanbetaling">Nee &mdash; &euro;&nbsp;0</span>
+            </div>
+          </div>
+          <div id="aanbetaling-opties" style="display:none; margin-top:8px; display:none;">
+            <div style="display:flex; gap:8px;">
+              <button class="aanbetaling-btn" data-value="2500" onclick="selectAanbetaling(2500)">&euro; 2.500</button>
+              <button class="aanbetaling-btn selected" data-value="5000" onclick="selectAanbetaling(5000)">&euro; 5.000</button>
+              <button class="aanbetaling-btn" data-value="10000" onclick="selectAanbetaling(10000)">&euro; 10.000</button>
             </div>
           </div>
 
@@ -351,10 +367,28 @@
       return (Math.round(n * 10) / 10).toLocaleString('nl-NL') + '%';
     }
 
+    let geselecteerdeAanbetaling = 5000;
+
+    function toggleAanbetaling() {
+      const aan = document.getElementById('tog-aanbetaling').checked;
+      const opties = document.getElementById('aanbetaling-opties');
+      opties.style.display = aan ? 'block' : 'none';
+      if (aan) selectAanbetaling(geselecteerdeAanbetaling);
+      else calc();
+    }
+
+    function selectAanbetaling(bedrag) {
+      geselecteerdeAanbetaling = bedrag;
+      document.querySelectorAll('.aanbetaling-btn').forEach(btn => {
+        btn.classList.toggle('selected', parseInt(btn.dataset.value) === bedrag);
+      });
+      calc();
+    }
+
     function calc() {
       const deal = parseFloat(document.getElementById('inp-deal').value) || 0;
       const heeftAanbetaling = document.getElementById('tog-aanbetaling').checked;
-      const aanbetaling = heeftAanbetaling ? 5000 : 0;
+      const aanbetaling = heeftAanbetaling ? geselecteerdeAanbetaling : 0;
 
       const salesNaam = document.getElementById('naam-sales').value || 'Sales officer';
       const recNaam   = document.getElementById('naam-rec').value   || 'Recruiter';
@@ -363,7 +397,8 @@
       const obRec     = document.getElementById('ob-rec').checked;
       const obCon     = document.getElementById('ob-con').checked;
 
-      document.getElementById('lbl-aanbetaling').textContent = heeftAanbetaling ? 'Ja \u2014 \u20ac\u00a05.000' : 'Nee \u2014 \u20ac\u00a00';
+      const bedragLabel = heeftAanbetaling ? geselecteerdeAanbetaling.toLocaleString('nl-NL') : '0';
+      document.getElementById('lbl-aanbetaling').textContent = heeftAanbetaling ? `Ja \u2014 \u20ac\u00a0${bedragLabel}` : 'Nee \u2014 \u20ac\u00a00';
 
       const wrap = document.getElementById('wrap-deal');
       wrap.className = deal > 0 ? 'text-input-wrap has-input' : 'text-input-wrap needs-input';
