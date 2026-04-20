@@ -270,7 +270,7 @@
             </span>
             <div class="text-input-wrap needs-input" id="wrap-deal">
               <span class="input-prefix">€</span>
-              <input type="number" id="inp-deal" placeholder="bijv. 15.000" min="0" step="500" oninput="calc()">
+              <input type="text" id="inp-deal" placeholder="bijv. 15.000" inputmode="decimal" oninput="calc()">
             </div>
           </div>
 
@@ -385,8 +385,12 @@
       calc();
     }
 
+    function parseDutch(str) {
+      return parseFloat((str || '').replace(/\./g, '').replace(',', '.')) || 0;
+    }
+
     function calc() {
-      const deal = parseFloat(document.getElementById('inp-deal').value) || 0;
+      const deal = parseDutch(document.getElementById('inp-deal').value);
       const heeftAanbetaling = document.getElementById('tog-aanbetaling').checked;
       const aanbetaling = heeftAanbetaling ? geselecteerdeAanbetaling : 0;
 
