@@ -203,6 +203,59 @@
 
   .back-link { position: fixed; top: 18px; left: 16px; font-size: 12px; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 4px; z-index: 200; }
   .back-link:hover { color: var(--text); }
+
+  .enrich-section { margin-bottom: 14px; }
+
+  .badge-not-enriched {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: rgba(244,162,97,0.18);
+    border: 1px solid rgba(244,162,97,0.45);
+    color: #f4a261;
+  }
+
+  .badge-enriched {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: rgba(29,185,84,0.12);
+    border: 1px solid rgba(29,185,84,0.35);
+    color: var(--go);
+  }
+
+  .enrich-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .enrich-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 10px;
+  }
+  .enrich-chip a { color: var(--blue-light); text-decoration: none; }
+  .enrich-chip a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -257,7 +310,7 @@ async function load() {
 
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, job_title, company_name, job_location, job_url, data_source, date_scraped, review_status, reviewed_by, reviewed_at')
+    .select('id, job_title, company_name, job_location, job_url, data_source, date_scraped, review_status, reviewed_by, reviewed_at, enriched_at, company_website, company_phone, company_industry, company_linkedin')
     .in('review_status', ['approved', 'in_behandeling'])
     .order('reviewed_at', { ascending: false });
 
@@ -334,6 +387,24 @@ function buildCard(job) {
     ? `<button class="action-btn btn-behandeling" onclick="window.setBehandeling('${job.id}', this)">In behandeling →</button>`
     : `<button class="action-btn btn-done" onclick="window.setDone('${job.id}', this)">✓ Afgerond</button>`;
 
+  let enrichHtml;
+  if (job.enriched_at) {
+    const chips = [
+      job.company_industry ? `<span class="enrich-chip">🏭 ${job.company_industry}</span>` : '',
+      job.company_website  ? `<span class="enrich-chip">🌐 <a href="${job.company_website}" target="_blank" rel="noopener">${job.company_website.replace(/^https?:\/\//, '')}</a></span>` : '',
+      job.company_phone    ? `<span class="enrich-chip">📞 ${job.company_phone}</span>` : '',
+      job.company_linkedin ? `<span class="enrich-chip">💼 <a href="${job.company_linkedin}" target="_blank" rel="noopener">LinkedIn</a></span>` : '',
+    ].filter(Boolean).join('');
+    enrichHtml = `<div class="enrich-section">
+      <span class="badge-enriched">✓ Enriched</span>
+      ${chips ? `<div class="enrich-details">${chips}</div>` : ''}
+    </div>`;
+  } else {
+    enrichHtml = `<div class="enrich-section">
+      <span class="badge-not-enriched">⚠ Nog niet enriched</span>
+    </div>`;
+  }
+
   card.innerHTML = `
     <div class="card-header">
       <div>
@@ -343,6 +414,7 @@ function buildCard(job) {
       <span class="status-badge ${statusClass}">${statusLabel}</span>
     </div>
     <div class="card-meta">${metaChips}</div>
+    ${enrichHtml}
     <div class="recruiter-row">${assignedHtml}</div>
     <div class="actions-row">
       <select class="recruiter-select" id="sel-${job.id}">
