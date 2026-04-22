@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a18">
+  <link rel="manifest" href="/BURG-Apps/manifest.json">
+  <link rel="apple-touch-icon" href="/BURG-Apps/icon-192.png">
+  <title>BURG — Jobpull Overdracht</title>
+
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    // ─── EMAILJS CONFIGURATIE ─────────────────────────────────────────────────
+    // Stap 1: Maak een gratis account op https://www.emailjs.com
+    // Stap 2: Maak een Email Service aan (bijv. Gmail) en kopieer de Service ID
+    // Stap 3: Maak een Email Template aan en kopieer de Template ID
+    // Stap 4: Kopieer je Public Key uit Account > API Keys
+    // Vervang de waarden hieronder:
+    const EMAILJS_PUBLIC_KEY  = 'tojkMyUVtV2ZhNoN9';
+    const EMAILJS_SERVICE_ID  = 'service_tdpa3m9';
+    const EMAILJS_TEMPLATE_ID = 'template_0re2a5g';
+
+    // Ontvangers (voeg 2-3 e-mailadressen toe):
+    const ONTVANGERS = [
+      'nils.denherder@burgqhsse.nl',
+    ];
+    // ─────────────────────────────────────────────────────────────────────────
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f4f0;
+      color: #1a1a18;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2.5rem 1.5rem;
+    }
+
+    /* ── Mobiel blokkeren ── */
+    .mobile-block {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 100vh;
+      padding: 2rem;
+      gap: 1rem;
+    }
+    .mobile-block .icon { font-size: 48px; }
+    .mobile-block h2 { font-size: 20px; font-weight: 500; }
+    .mobile-block p { font-size: 14px; color: #73726c; line-height: 1.6; }
+
+    @media (max-width: 768px) {
+      body > .wrap { display: none; }
+      .mobile-block { display: flex; }
+    }
+
+    /* ── Layout ── */
+    .wrap { width: 100%; max-width: 860px; }
+
+    .back {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px; color: #73726c; text-decoration: none;
+      margin-bottom: 1.5rem;
+    }
+    .back:hover { color: #1a1a18; }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 24px; font-weight: 500; color: #1a1a18; margin-bottom: 4px; }
+    .page-header p { font-size: 14px; color: #73726c; }
+
+    /* ── Card sections ── */
+    .section-card {
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 16px;
+    }
+
+    .section-label {
+      font-size: 11px; font-weight: 600; color: #b4b2a9;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── Grid layouts ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* ── Form fields ── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+
+    label { font-size: 12px; font-weight: 500; color: #73726c; }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    input[type="email"],
+    textarea,
+    select {
+      width: 100%;
+      border: 1.5px solid rgba(0,0,0,0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a18;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #1a1a18; }
+    input.filled, textarea.filled, select.filled { border-color: #3b6d11; }
+
+    textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+
+    select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2373726c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+    /* ── Toggle buttons ── */
+    .btn-toggle-group { display: flex; gap: 8px; }
+    .btn-toggle {
+      flex: 1; padding: 10px 8px; font-size: 13px; font-weight: 500;
+      border-radius: 8px; border: 1.5px solid rgba(0,0,0,0.15);
+      background: transparent; color: #73726c; cursor: pointer;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-toggle:hover { border-color: rgba(0,0,0,0.35); color: #1a1a18; }
+    .btn-toggle.active { background: #1a1a18; color: #f5f4f0; border-color: #1a1a18; }
+    .btn-toggle.active-green { background: #3b6d11; color: #fff; border-color: #3b6d11; }
+    .btn-toggle.active-red { background: #a32d2d; color: #fff; border-color: #a32d2d; }
+
+    /* ── Conditional block ── */
+    .conditional {
+      overflow: hidden; max-height: 0;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+    .conditional.visible { max-height: 300px; opacity: 1; }
+    .conditional .grid-2 { margin-top: 16px; }
+
+    /* ── Submit ── */
+    .submit-wrap { display: flex; justify-content: flex-end; align-items: center; gap: 16px; margin-top: 8px; }
+    .submit-note { font-size: 12px; color: #73726c; }
+
+    .btn-submit {
+      padding: 12px 32px; background: #1a1a18; color: #f5f4f0;
+      border: none; border-radius: 10px; font-size: 15px; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn-submit:hover { opacity: 0.85; }
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Status banner ── */
+    .status-banner {
+      border-radius: 10px; padding: 14px 18px; font-size: 14px; font-weight: 500;
+      margin-top: 16px; display: none; align-items: center; gap: 10px;
+    }
+    .status-banner.success { display: flex; background: #eaf3de; color: #3b6d11; }
+    .status-banner.error   { display: flex; background: #fcebeb; color: #a32d2d; }
+    .status-banner.sending { display: flex; background: #f5f4f0; color: #73726c; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 0.5px solid rgba(0,0,0,0.08); margin: 1.25rem 0; }
+
+    /* ── Dark mode ── */
+    @media (prefers-color-scheme: dark) {
+      body { background: #1e1e1c; color: #e0dfd8; }
+      .section-card { background: #2a2a28; border-color: rgba(255,255,255,0.1); }
+      .page-header h1 { color: #e0dfd8; }
+      .page-header p, label { color: #888780; }
+      .section-label { color: #5f5e5a; }
+      .back { color: #5f5e5a; }
+      .back:hover { color: #e0dfd8; }
+      input[type="text"], input[type="date"], input[type="time"],
+      input[type="email"], textarea, select {
+        background: #333330; border-color: rgba(255,255,255,0.15); color: #e0dfd8;
+      }
+      input:focus, textarea:focus, select:focus { border-color: #e0dfd8; }
+      input.filled, textarea.filled, select.filled { border-color: #97c459; }
+      .btn-toggle { border-color: rgba(255,255,255,0.2); color: #888780; }
+      .btn-toggle:hover { border-color: rgba(255,255,255,0.4); color: #e0dfd8; }
+      .btn-toggle.active { background: #e0dfd8; color: #1a1a18; border-color: #e0dfd8; }
+      .submit-note { color: #888780; }
+      .btn-submit { background: #e0dfd8; color: #1a1a18; }
+      .status-banner.success { background: #27500a; color: #c0dd97; }
+      .status-banner.error   { background: #791f1f; color: #f7c1c1; }
+      .status-banner.sending { background: #333330; color: #888780; }
+      .mobile-block h2 { color: #e0dfd8; }
+      .mobile-block p { color: #888780; }
+      .divider { border-color: rgba(255,255,255,0.08); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mobiel blokkeren -->
+  <div class="mobile-block">
+    <div class="icon">🖥️</div>
+    <h2>Alleen beschikbaar op desktop</h2>
+    <p>De Jobpull Overdracht is alleen beschikbaar op een computer. Open deze pagina op je laptop of desktop.</p>
+  </div>
+
+  <div class="wrap">
+    <a href="/BURG-Apps/" class="back">‹ Terug</a>
+
+    <div class="page-header">
+      <h1>Jobpull Overdracht</h1>
+      <p>Vul alle velden in om de overdracht van Sales naar Consultant te completeren</p>
+    </div>
+
+    <!-- SECTIE 1: BETROKKENEN -->
+    <div class="section-card">
+      <div class="section-label">Betrokkenen</div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Naam salesconsultant</label>
+          <input type="text" id="sales-naam" placeholder="Voornaam Achternaam" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>Bedrijfsnaam</label>
+          <input type="text" id="bedrijf" placeholder="Naam opdrachtgever" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>Functietitel vacature</label>
+          <input type="text" id="functie" placeholder="bijv. QHSSE Manager" oninput="markFilled(this)">
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="field">
+        <label>Geschatte senioriteit</label>
+        <div class="btn-toggle-group">
+          <button class="btn-toggle" onclick="setSenioriteit('Onboarding', this)">Onboarding</button>
+          <button class="btn-toggle" onclick="setSenioriteit('Medior', this)">Medior</button>
+          <button class="btn-toggle" onclick="setSenioriteit('Senior', this)">Senior</button>
+        </div>
+        <input type="hidden" id="senioriteit" value="">
+      </div>
+    </div>
+
+    <!-- SECTIE 2: GESPREKSPARTNERS -->
+    <div class="section-card">
+      <div class="section-label">Gesprekspartners</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Gesprekspartner 1 (naam + functie)</label>
+          <input type="text" id="gp1" placeholder="bijv. Jan de Vries — HR Manager" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>Gesprekspartner 2 (naam + functie)</label>
+          <input type="text" id="gp2" placeholder="bijv. Lisa Smit — Directeur" oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTIE 3: AFSPRAAK -->
+    <div class="section-card">
+      <div class="section-label">Afspraak</div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Datum afspraak</label>
+          <input type="date" id="datum" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>Tijd afspraak</label>
+          <input type="time" id="tijd" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>Type afspraak</label>
+          <div class="btn-toggle-group">
+            <button class="btn-toggle" onclick="setTypeAfspraak('Teams', this)">🖥 Teams</button>
+            <button class="btn-toggle" onclick="setTypeAfspraak('Op locatie', this)">📍 Op locatie</button>
+          </div>
+          <input type="hidden" id="type-afspraak" value="">
+        </div>
+      </div>
+
+      <!-- Conditioneel: alleen bij op locatie -->
+      <div class="conditional" id="locatie-block">
+        <div class="grid-2">
+          <div class="field">
+            <label>Exact adres locatie</label>
+            <input type="text" id="adres" placeholder="Straat 1, 1234 AB Stad" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>Auto gereserveerd?</label>
+            <div class="btn-toggle-group">
+              <button class="btn-toggle" onclick="setAuto('Ja', this)" id="auto-ja">Ja</button>
+              <button class="btn-toggle" onclick="setAuto('Nee', this)" id="auto-nee">Nee</button>
+            </div>
+            <input type="hidden" id="auto" value="">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTIE 4: INFO OVER DE JOB -->
+    <div class="section-card">
+      <div class="section-label">Info over de job</div>
+      <div class="grid-2">
+
+        <div class="field full">
+          <label>Beschrijving van de job</label>
+          <textarea id="beschrijving" placeholder="Geef een korte omschrijving van de rol, context en verwachtingen..." oninput="markFilled(this)"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Hoe lang wordt er al gezocht?</label>
+          <select id="zoekduur" onchange="markFilled(this)">
+            <option value="" disabled selected>Kies een optie</option>
+            <option>Minder dan 1 maand</option>
+            <option>1–3 maanden</option>
+            <option>3–6 maanden</option>
+            <option>Langer dan 6 maanden</option>
+            <option>Onbekend</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Zijn er andere bureaus ingeschakeld?</label>
+          <div class="btn-toggle-group">
+            <button class="btn-toggle" onclick="setBureaus('Ja', this)">Ja</button>
+            <button class="btn-toggle" onclick="setBureaus('Nee', this)">Nee</button>
+            <button class="btn-toggle" onclick="setBureaus('Onbekend', this)">Onbekend</button>
+          </div>
+          <input type="hidden" id="bureaus" value="">
+        </div>
+
+        <div class="field">
+          <label>Zijn er kandidaten in proces?</label>
+          <div class="btn-toggle-group">
+            <button class="btn-toggle" onclick="setKandidaten('Ja', this)">Ja</button>
+            <button class="btn-toggle" onclick="setKandidaten('Nee', this)">Nee</button>
+            <button class="btn-toggle" onclick="setKandidaten('Onbekend', this)">Onbekend</button>
+          </div>
+          <input type="hidden" id="kandidaten" value="">
+        </div>
+
+        <div class="field">
+          <label>Salarisindicatie</label>
+          <input type="text" id="salaris" placeholder="bijv. € 4.500 – € 6.000 / mnd" oninput="markFilled(this)">
+        </div>
+
+        <div class="field">
+          <label>Voorwaarden aanwezig?</label>
+          <div class="btn-toggle-group">
+            <button class="btn-toggle" onclick="setVoorwaarden('Ja', this)">Ja</button>
+            <button class="btn-toggle" onclick="setVoorwaarden('Nee', this)">Nee</button>
+          </div>
+          <input type="hidden" id="voorwaarden" value="">
+        </div>
+
+        <div class="field full">
+          <label>Aanvullende opmerkingen (optioneel)</label>
+          <textarea id="opmerkingen" placeholder="Overige relevante informatie voor de consultant..." oninput="markFilled(this)"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="section-card">
+      <div class="submit-wrap">
+        <span class="submit-note" id="submit-note">Vul alle verplichte velden in</span>
+        <button class="btn-submit" id="btn-submit" onclick="verzenden()">Overdracht versturen →</button>
+      </div>
+      <div class="status-banner" id="status-banner"></div>
+    </div>
+
+  </div><!-- /wrap -->
+
+  <script>
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    // ── State ──
+    let senioriteit = '', typeAfspraak = '', auto = '';
+    let bureaus = '', kandidaten = '', voorwaarden = '';
+
+    // ── Helpers ──
+    function markFilled(el) {
+      el.classList.toggle('filled', el.value.trim().length > 0);
+    }
+
+    function setToggle(hiddenId, val, btn, groupClass) {
+      document.getElementById(hiddenId).value = val;
+      document.querySelectorAll('.' + groupClass).forEach(b => b.classList.remove('active', 'active-green', 'active-red'));
+      btn.classList.add('active');
+    }
+
+    function setSenioriteit(val, btn) {
+      senioriteit = val;
+      document.getElementById('senioriteit').value = val;
+      document.querySelectorAll('#senioriteit ~ .btn-toggle-group .btn-toggle, .btn-toggle-group').forEach(() => {});
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function setTypeAfspraak(val, btn) {
+      typeAfspraak = val;
+      document.getElementById('type-afspraak').value = val;
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const block = document.getElementById('locatie-block');
+      block.classList.toggle('visible', val === 'Op locatie');
+    }
+
+    function setAuto(val, btn) {
+      auto = val;
+      document.getElementById('auto').value = val;
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active', 'active-green', 'active-red'));
+      btn.classList.add(val === 'Ja' ? 'active-green' : 'active-red');
+    }
+
+    function setBureaus(val, btn) {
+      bureaus = val;
+      document.getElementById('bureaus').value = val;
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function setKandidaten(val, btn) {
+      kandidaten = val;
+      document.getElementById('kandidaten').value = val;
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function setVoorwaarden(val, btn) {
+      voorwaarden = val;
+      document.getElementById('voorwaarden').value = val;
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add(val === 'Ja' ? 'active-green' : 'active-red');
+    }
+
+    // ── Formulier verzenden ──
+    async function verzenden() {
+      const btn = document.getElementById('btn-submit');
+      const banner = document.getElementById('status-banner');
+
+      const data = {
+        sales_naam:    document.getElementById('sales-naam').value.trim(),
+        bedrijf:       document.getElementById('bedrijf').value.trim(),
+        functie:       document.getElementById('functie').value.trim(),
+        senioriteit:   document.getElementById('senioriteit').value,
+        gp1:           document.getElementById('gp1').value.trim(),
+        gp2:           document.getElementById('gp2').value.trim(),
+        datum:         document.getElementById('datum').value,
+        tijd:          document.getElementById('tijd').value,
+        type_afspraak: document.getElementById('type-afspraak').value,
+        adres:         document.getElementById('adres').value.trim() || '—',
+        auto:          document.getElementById('auto').value || '—',
+        beschrijving:  document.getElementById('beschrijving').value.trim(),
+        zoekduur:      document.getElementById('zoekduur').value,
+        bureaus:       document.getElementById('bureaus').value,
+        kandidaten:    document.getElementById('kandidaten').value,
+        salaris:       document.getElementById('salaris').value.trim(),
+        voorwaarden:   document.getElementById('voorwaarden').value,
+        opmerkingen:   document.getElementById('opmerkingen').value.trim() || '—',
+      };
+
+      // Validatie
+      const required = ['sales_naam','bedrijf','functie','senioriteit','gp1','datum','tijd','type_afspraak','beschrijving','zoekduur','bureaus','kandidaten','salaris','voorwaarden'];
+      const missing = required.filter(k => !data[k]);
+      if (missing.length > 0) {
+        banner.className = 'status-banner error';
+        banner.textContent = '⚠️ Vul alle verplichte velden in voor je verstuurt.';
+        return;
+      }
+
+      btn.disabled = true;
+      banner.className = 'status-banner sending';
+      banner.textContent = '⏳ Bezig met versturen...';
+
+      // Stuur naar alle ontvangers
+      try {
+        for (const to of ONTVANGERS) {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...data, to_email: to });
+        }
+        banner.className = 'status-banner success';
+        banner.textContent = '✅ Overdracht succesvol verstuurd naar alle ontvangers!';
+        btn.textContent = 'Verstuurd ✓';
+      } catch (err) {
+        console.error(err);
+        banner.className = 'status-banner error';
+        banner.textContent = '❌ Versturen mislukt. Controleer de EmailJS configuratie.';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
