@@ -70,20 +70,17 @@
     .tool-card:active { transform: scale(0.98); }
 
     .tool-icon {
-      width: 48px;
-      height: 48px;
+      width: 56px;
+      height: 56px;
       border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      overflow: hidden;
       flex-shrink: 0;
+      background: #f0eeea;
     }
-
-    .tool-icon.fee { background: #4169a0; }
-    .tool-icon.hon { background: #1a1a18; }
-    .tool-icon.pla { background: #2d6a4f; }
-    .tool-icon.job { background: #a04141; }
-    .tool-icon.pro { background: #c2410c; }
+    .tool-icon img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
 
     .tool-text { flex: 1; }
     .tool-name { font-size: 15px; font-weight: 500; color: #1a1a18; margin-bottom: 2px; }
@@ -94,10 +91,10 @@
 
     /* Desktop */
     @media (min-width: 640px) {
-      .tools { max-width: 900px; flex-direction: row; }
-      .tool-card { flex-direction: column; align-items: flex-start; padding: 1.5rem; flex: 1; }
+      .tools { max-width: 960px; flex-direction: row; flex-wrap: wrap; }
+      .tool-card { flex-direction: column; align-items: flex-start; padding: 1.5rem; flex: 1; min-width: 160px; }
       .tool-arrow { display: none; }
-      .tool-icon { width: 52px; height: 52px; margin-bottom: 0.75rem; }
+      .tool-icon { width: 72px; height: 72px; margin-bottom: 1rem; border-radius: 16px; }
       .tool-name { font-size: 16px; margin-bottom: 4px; }
       .tool-desc { font-size: 13px; }
     }
@@ -110,7 +107,7 @@
       .tool-card:hover { border-color: rgba(65,105,160,0.5); }
       .tool-name { color: #e0dfd8; }
       .tool-desc { color: #5f5e5a; }
-      .tool-icon.hon { background: #333330; }
+      .tool-icon { background: #333330; }
       .tool-arrow { color: #444441; }
       .version { color: #444441; }
     }
@@ -128,17 +125,8 @@
   <div class="tools">
 
     <a href="/BURG-Apps/calculator.html" class="tool-card">
-      <div class="tool-icon fee">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <rect x="4" y="3" width="18" height="20" rx="3" stroke="white" stroke-width="1.5"/>
-          <rect x="7.5" y="6.5" width="11" height="4" rx="1" fill="white"/>
-          <circle cx="8.5" cy="15" r="1.5" fill="white"/>
-          <circle cx="13" cy="15" r="1.5" fill="white"/>
-          <circle cx="17.5" cy="15" r="1.5" fill="white"/>
-          <circle cx="8.5" cy="19.5" r="1.5" fill="white"/>
-          <circle cx="13" cy="19.5" r="1.5" fill="white"/>
-          <circle cx="17.5" cy="19.5" r="1.5" fill="white"/>
-        </svg>
+      <div class="tool-icon">
+        <img src="/BURG-Apps/img-fee-checker.png" alt="Fee Checker">
       </div>
       <div class="tool-text">
         <div class="tool-name">Fee Checker</div>
@@ -148,14 +136,8 @@
     </a>
 
     <a href="/BURG-Apps/jobpull.html" class="tool-card">
-      <div class="tool-icon job">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <rect x="4" y="7" width="18" height="14" rx="2" stroke="white" stroke-width="1.5"/>
-          <path d="M9 7V5.5C9 4.67 9.67 4 10.5 4H15.5C16.33 4 17 4.67 17 5.5V7" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M4 13H22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M11 13V15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M15 13V15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+      <div class="tool-icon">
+        <img src="/BURG-Apps/img-jobpull.png" alt="Sales Overdracht">
       </div>
       <div class="tool-text">
         <div class="tool-name">Sales Overdracht</div>
@@ -165,13 +147,8 @@
     </a>
 
     <a href="/BURG-Apps/plaatsing.html" class="tool-card">
-      <div class="tool-icon hon">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <path d="M3 14.5L7 10.5L10.5 12.5L14.5 8.5H19" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M16 8.5H22V15.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="19" cy="18" r="4" fill="#4169a0"/>
-          <path d="M17.5 18L18.5 19L20.5 17" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <div class="tool-icon">
+        <img src="/BURG-Apps/img-honorarium.png" alt="Definitief Honorarium">
       </div>
       <div class="tool-text">
         <div class="tool-name">Definitief Honorarium</div>
@@ -181,14 +158,8 @@
     </a>
 
     <a href="/BURG-Apps/plaatsing-verdeling.html" class="tool-card">
-      <div class="tool-icon pla">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <circle cx="13" cy="13" r="9" stroke="white" stroke-width="1.5"/>
-          <path d="M13 13L13 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M13 13L20.8 17.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M13 13L5.2 17.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-          <circle cx="13" cy="13" r="2" fill="white"/>
-        </svg>
+      <div class="tool-icon">
+        <img src="/BURG-Apps/img-verdeling.png" alt="Verdeling Plaatsing">
       </div>
       <div class="tool-text">
         <div class="tool-name">Verdeling Plaatsing</div>
@@ -198,11 +169,8 @@
     </a>
 
     <a href="/BURG-Apps/proeftijd.html" class="tool-card">
-      <div class="tool-icon pro">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <circle cx="13" cy="13" r="9" stroke="white" stroke-width="1.5"/>
-          <path d="M13 8v5l3 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <div class="tool-icon">
+        <img src="/BURG-Apps/img-proeftijd.png" alt="Proeftijd Tracker">
       </div>
       <div class="tool-text">
         <div class="tool-name">Proeftijd Tracker</div>
