@@ -371,7 +371,8 @@
   }
 
   function saveCandidates() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates)); }
+    catch { /* localStorage niet beschikbaar (bijv. kiosk-modus) — doorgaan zonder opslaan */ }
   }
 
   // ── Date helpers ──
