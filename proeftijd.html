@@ -375,10 +375,14 @@
     const end = getEndDate(c);
     const now = new Date();
     const diff = end - now;
-    if (diff <= 0) return 'GESLAAGD';
-    const days = Math.floor(diff / 864e5);
+    if (diff <= 0) return ' GESLAAGD  '; // 11 chars
+    const days  = Math.floor(diff / 864e5);
     const hours = Math.floor((diff % 864e5) / 36e5);
-    return ' ' + String(days).padStart(2, '0') + 'D ' + String(hours).padStart(2, '0') + 'U';
+    const mins  = Math.floor((diff % 36e5) / 6e4);
+    // Format: "42D 08U 23M" = 11 chars
+    return String(days).padStart(2, '0') + 'D ' +
+           String(hours).padStart(2, '0') + 'U ' +
+           String(mins).padStart(2, '0') + 'M';
   }
 
   function getProgress(c) {
@@ -439,8 +443,8 @@
 
     const chars = Array.from(displayStr);
     chars.forEach((ch, i) => {
-      // Visual gap between groups: after index 2 (before space) skip
-      if (i === 4) {
+      // Visual gaps between groups (D / U / M)
+      if (i === 3 || i === 7) {
         const gap = document.createElement('div');
         gap.className = 'flap-gap';
         board.appendChild(gap);
@@ -594,7 +598,7 @@
   // ── Init ──
   loadCandidates();
   renderAll();
-  setInterval(updateDisplays, 30000);
+  setInterval(updateDisplays, 10000);
 </script>
 </body>
 </html>
