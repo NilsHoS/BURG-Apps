@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a18">
+  <link rel="manifest" href="/BURG-Apps/manifest.json">
+  <link rel="apple-touch-icon" href="/BURG-Apps/icon-192.png">
+  <title>BURG — Proeftijd Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f4f0;
+      color: #1a1a18;
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .wrap { width: 100%; max-width: 960px; margin: 0 auto; }
+
+    .back {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px; color: #73726c; text-decoration: none;
+      margin-bottom: 1.5rem;
+    }
+    .back:hover { color: #1a1a18; }
+
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 2rem; flex-wrap: wrap; gap: 12px;
+    }
+    .page-header h1 { font-size: 24px; font-weight: 500; }
+    .page-header p { font-size: 14px; color: #73726c; margin-top: 2px; }
+
+    /* ── Add button ── */
+    .btn-add {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 20px; background: #1a1a18; color: #f5f4f0;
+      border: none; border-radius: 10px; font-size: 14px; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { opacity: 0.85; }
+    .btn-add:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 4rem 2rem;
+      color: #b4b2a9; font-size: 15px;
+    }
+    .empty-state .icon { font-size: 48px; display: block; margin-bottom: 1rem; }
+
+    /* ── Candidate grid ── */
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    /* ── Candidate card ── */
+    .candidate-card {
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 16px;
+      padding: 1.25rem;
+      transition: border-color 0.2s;
+    }
+    .candidate-card.done {
+      border-color: rgba(59,109,17,0.4);
+      background: #f6fbf0;
+    }
+
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .candidate-name {
+      font-size: 15px; font-weight: 500; color: #1a1a18;
+    }
+    .candidate-card.done .candidate-name { color: #3b6d11; }
+    .delete-btn {
+      background: none; border: none; cursor: pointer;
+      color: #b4b2a9; font-size: 16px; line-height: 1;
+      padding: 2px 4px; border-radius: 4px; transition: color 0.15s;
+    }
+    .delete-btn:hover { color: #a32d2d; }
+
+    /* ── Split-flap board ── */
+    .flap-board {
+      background: #1a1a18;
+      border-radius: 10px;
+      padding: 14px 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;
+      margin-bottom: 1rem;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .candidate-card.done .flap-board { background: #2d5a0e; }
+
+    .flap-gap { width: 6px; } /* spacer between groups */
+
+    /* ── Individual flap ── */
+    .flap {
+      position: relative;
+      width: 34px;
+      height: 52px;
+      border-radius: 5px;
+      overflow: hidden;
+      background: #111110;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      perspective: 200px;
+    }
+
+    .flap-upper {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 26px;
+      overflow: hidden;
+      background: #1e1e1c;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .flap-lower {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 26px;
+      overflow: hidden;
+      background: #151513;
+      display: flex; align-items: flex-start; justify-content: center;
+    }
+    .flap-sep {
+      position: absolute;
+      top: 25px; left: 0; right: 0;
+      height: 2px;
+      background: #1a1a18;
+      z-index: 3;
+    }
+
+    .flap-upper span, .flap-lower span, .flap-fold span {
+      font-family: 'Courier New', 'Courier', monospace;
+      font-size: 30px;
+      font-weight: 700;
+      color: #f5f4f0;
+      display: block;
+      height: 52px;
+      line-height: 52px;
+      width: 34px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .flap-upper span { margin-bottom: 0; transform: translateY(26px); }
+    .flap-lower span { transform: translateY(-26px); }
+
+    /* ── The flipping card (overlay on upper half) ── */
+    .flap-fold {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 26px;
+      overflow: hidden;
+      background: #1e1e1c;
+      transform-origin: bottom center;
+      z-index: 2;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .flap-fold span { transform: translateY(26px); }
+
+    @keyframes flapFlip {
+      0%   { transform: rotateX(0deg); box-shadow: 0 0 0 rgba(0,0,0,0); }
+      40%  { box-shadow: 0 8px 16px rgba(0,0,0,0.6); }
+      100% { transform: rotateX(-90deg); box-shadow: 0 0 0 rgba(0,0,0,0); }
+    }
+    .flap-fold.flipping {
+      animation: flapFlip 0.22s ease-in forwards;
+    }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      height: 3px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #ef9f27, #3b6d11);
+      transition: width 0.5s;
+    }
+    .candidate-card.done .progress-fill { width: 100% !important; background: #3b6d11; }
+
+    /* ── Card meta ── */
+    .card-meta {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: #73726c; gap: 4px;
+    }
+    .candidate-card.done .card-meta { color: #3b6d11; opacity: 0.8; }
+    .months-badge {
+      background: rgba(0,0,0,0.06); border-radius: 4px;
+      padding: 1px 6px; font-size: 11px; font-weight: 500;
+    }
+
+    /* ── Modal overlay ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+      padding: 1rem;
+    }
+    .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+
+    .modal {
+      background: #fff; border-radius: 16px;
+      padding: 1.75rem; width: 100%; max-width: 400px;
+      transform: scale(0.96); transition: transform 0.2s;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-overlay.visible .modal { transform: scale(1); }
+
+    .modal h2 { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; }
+
+    .modal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+    .modal-field label { font-size: 12px; font-weight: 500; color: #73726c; }
+    .modal-field input[type="text"],
+    .modal-field input[type="date"] {
+      border: 1.5px solid rgba(0,0,0,0.15); border-radius: 8px;
+      padding: 10px 12px; font-size: 15px; font-family: inherit;
+      color: #1a1a18; outline: none; transition: border-color 0.2s;
+    }
+    .modal-field input:focus { border-color: #1a1a18; }
+
+    .months-group { display: flex; gap: 8px; }
+    .months-btn {
+      flex: 1; padding: 10px; font-size: 14px; font-weight: 500;
+      border-radius: 8px; border: 1.5px solid rgba(0,0,0,0.15);
+      background: transparent; color: #73726c; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .months-btn.active { background: #1a1a18; color: #f5f4f0; border-color: #1a1a18; }
+
+    .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+    .btn-cancel {
+      flex: 1; padding: 11px; border: 1.5px solid rgba(0,0,0,0.15);
+      border-radius: 10px; background: transparent; font-size: 14px;
+      font-weight: 500; font-family: inherit; cursor: pointer; color: #73726c;
+      transition: all 0.15s;
+    }
+    .btn-cancel:hover { border-color: rgba(0,0,0,0.3); color: #1a1a18; }
+    .btn-confirm {
+      flex: 2; padding: 11px; background: #1a1a18; color: #f5f4f0;
+      border: none; border-radius: 10px; font-size: 14px; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn-confirm:hover { opacity: 0.85; }
+
+    /* ── Dark mode ── */
+    @media (prefers-color-scheme: dark) {
+      body { background: #1e1e1c; color: #e0dfd8; }
+      .back { color: #5f5e5a; }
+      .back:hover { color: #e0dfd8; }
+      .page-header h1 { color: #e0dfd8; }
+      .page-header p { color: #5f5e5a; }
+      .candidate-card { background: #2a2a28; border-color: rgba(255,255,255,0.1); }
+      .candidate-card.done { background: #1a2e10; border-color: rgba(59,109,17,0.4); }
+      .candidate-name { color: #e0dfd8; }
+      .progress-bar { background: rgba(255,255,255,0.08); }
+      .card-meta { color: #5f5e5a; }
+      .months-badge { background: rgba(255,255,255,0.08); color: #888780; }
+      .btn-add { background: #e0dfd8; color: #1a1a18; }
+      .modal { background: #2a2a28; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+      .modal h2 { color: #e0dfd8; }
+      .modal-field label { color: #888780; }
+      .modal-field input[type="text"],
+      .modal-field input[type="date"] {
+        background: #333330; border-color: rgba(255,255,255,0.15); color: #e0dfd8;
+      }
+      .modal-field input:focus { border-color: #e0dfd8; }
+      .months-btn { border-color: rgba(255,255,255,0.15); color: #888780; }
+      .months-btn.active { background: #e0dfd8; color: #1a1a18; border-color: #e0dfd8; }
+      .btn-cancel { border-color: rgba(255,255,255,0.15); color: #888780; }
+      .btn-cancel:hover { border-color: rgba(255,255,255,0.3); color: #e0dfd8; }
+      .btn-confirm { background: #e0dfd8; color: #1a1a18; }
+      .empty-state { color: #444441; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <a href="/BURG-Apps/" class="back">‹ Terug</a>
+
+  <div class="page-header">
+    <div>
+      <h1>Proeftijd Tracker</h1>
+      <p id="subtitle">Maximaal 6 kandidaten</p>
+    </div>
+    <button class="btn-add" id="add-btn" onclick="openModal()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Kandidaat toevoegen
+    </button>
+  </div>
+
+  <div class="empty-state" id="empty-state">
+    <span class="icon">⏱</span>
+    Nog geen kandidaten. Voeg er één toe om te beginnen.
+  </div>
+
+  <div class="candidates-grid" id="candidates-grid"></div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <h2>Kandidaat toevoegen</h2>
+    <div class="modal-field">
+      <label>Naam kandidaat</label>
+      <input type="text" id="modal-naam" placeholder="Voornaam Achternaam" maxlength="40">
+    </div>
+    <div class="modal-field">
+      <label>Startdatum proeftijd</label>
+      <input type="date" id="modal-datum">
+    </div>
+    <div class="modal-field">
+      <label>Duur proeftijd</label>
+      <div class="months-group">
+        <button class="months-btn" data-val="1" onclick="selectMonths(1, this)">1 maand</button>
+        <button class="months-btn active" data-val="2" onclick="selectMonths(2, this)">2 maanden</button>
+        <button class="months-btn" data-val="3" onclick="selectMonths(3, this)">3 maanden</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-confirm" onclick="confirmAdd()">Toevoegen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Storage ──
+  const STORAGE_KEY = 'proeftijd-v1';
+  let candidates = [];
+  let flapStates = {};
+  let selectedMonths = 2;
+
+  function loadCandidates() {
+    try { candidates = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { candidates = []; }
+  }
+
+  function saveCandidates() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+  }
+
+  // ── Date helpers ──
+  function getEndDate(c) {
+    const d = new Date(c.startDate);
+    d.setMonth(d.getMonth() + c.months);
+    return d;
+  }
+
+  function formatDate(date) {
+    return new Date(date).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  function getDisplayString(c) {
+    const end = getEndDate(c);
+    const now = new Date();
+    const diff = end - now;
+    if (diff <= 0) return 'GESLAAGD';
+    const days = Math.floor(diff / 864e5);
+    const hours = Math.floor((diff % 864e5) / 36e5);
+    return ' ' + String(days).padStart(2, '0') + 'D ' + String(hours).padStart(2, '0') + 'U';
+  }
+
+  function getProgress(c) {
+    const start = new Date(c.startDate).getTime();
+    const end = getEndDate(c).getTime();
+    const now = Date.now();
+    return Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
+  }
+
+  function sortedCandidates() {
+    return [...candidates].sort((a, b) => {
+      const now = Date.now();
+      const aD = getEndDate(a).getTime() - now;
+      const bD = getEndDate(b).getTime() - now;
+      if (aD <= 0 && bD > 0) return 1;
+      if (aD > 0 && bD <= 0) return -1;
+      return aD - bD;
+    });
+  }
+
+  function esc(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Split-flap DOM ──
+  function createFlap(char) {
+    const f = document.createElement('div');
+    f.className = 'flap';
+    f.innerHTML = `
+      <div class="flap-upper"><span>${esc(char)}</span></div>
+      <div class="flap-sep"></div>
+      <div class="flap-lower"><span>${esc(char)}</span></div>
+      <div class="flap-fold"><span>${esc(char)}</span></div>`;
+    return f;
+  }
+
+  function animateFlap(flapEl, newChar, oldChar) {
+    const upper = flapEl.querySelector('.flap-upper span');
+    const lower = flapEl.querySelector('.flap-lower span');
+    const fold  = flapEl.querySelector('.flap-fold');
+    const foldSpan = fold.querySelector('span');
+
+    // Show old char on fold overlay, new char underneath
+    foldSpan.textContent = oldChar;
+    upper.textContent = newChar;
+    lower.textContent = newChar;
+
+    // Trigger animation
+    fold.classList.remove('flipping');
+    void fold.offsetWidth;
+    fold.classList.add('flipping');
+  }
+
+  function createBoard(candidate, displayStr) {
+    const board = document.createElement('div');
+    board.className = 'flap-board';
+    board.dataset.id = candidate.id;
+
+    const chars = Array.from(displayStr);
+    chars.forEach((ch, i) => {
+      // Visual gap between groups: after index 2 (before space) skip
+      if (i === 4) {
+        const gap = document.createElement('div');
+        gap.className = 'flap-gap';
+        board.appendChild(gap);
+      }
+      board.appendChild(createFlap(ch));
+    });
+    return board;
+  }
+
+  function getFlapEls(candidateId) {
+    const board = document.querySelector(`.flap-board[data-id="${candidateId}"]`);
+    return board ? Array.from(board.querySelectorAll('.flap')) : [];
+  }
+
+  // ── Render ──
+  function renderAll() {
+    const grid = document.getElementById('candidates-grid');
+    grid.innerHTML = '';
+    flapStates = {};
+
+    const sorted = sortedCandidates();
+    document.getElementById('empty-state').style.display = sorted.length === 0 ? '' : 'none';
+    document.getElementById('add-btn').disabled = candidates.length >= 6;
+    document.getElementById('subtitle').textContent =
+      candidates.length === 0 ? 'Maximaal 6 kandidaten' :
+      `${candidates.length}/6 kandidaten · bijgewerkt elke 30 seconden`;
+
+    sorted.forEach(c => {
+      const displayStr = getDisplayString(c);
+      const isDone = getEndDate(c) <= new Date();
+      flapStates[c.id] = Array.from(displayStr);
+
+      const card = document.createElement('div');
+      card.className = 'candidate-card' + (isDone ? ' done' : '');
+      card.dataset.id = c.id;
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'card-header';
+      header.innerHTML = `
+        <span class="candidate-name">${esc(c.name)}</span>
+        <button class="delete-btn" onclick="removeCandidate('${c.id}')" title="Verwijderen">✕</button>`;
+      card.appendChild(header);
+
+      // Board
+      card.appendChild(createBoard(c, displayStr));
+
+      // Progress bar
+      const prog = document.createElement('div');
+      prog.className = 'progress-bar';
+      prog.innerHTML = `<div class="progress-fill" style="width:${getProgress(c).toFixed(1)}%"></div>`;
+      card.appendChild(prog);
+
+      // Meta
+      const meta = document.createElement('div');
+      meta.className = 'card-meta';
+      meta.innerHTML = `
+        <span>Start: ${formatDate(c.startDate)}</span>
+        <span class="months-badge">${c.months} mnd</span>
+        <span>Einde: ${formatDate(getEndDate(c))}</span>`;
+      card.appendChild(meta);
+
+      grid.appendChild(card);
+    });
+  }
+
+  function updateDisplays() {
+    sortedCandidates().forEach((c, ci) => {
+      const newStr = getDisplayString(c);
+      const newChars = Array.from(newStr);
+      const oldChars = flapStates[c.id] || [];
+
+      const flaps = getFlapEls(c.id);
+      newChars.forEach((ch, i) => {
+        if (ch !== oldChars[i] && flaps[i]) {
+          const delay = ci * 80 + i * 40;
+          setTimeout(() => animateFlap(flaps[i], ch, oldChars[i] || ' '), delay);
+        }
+      });
+      flapStates[c.id] = newChars;
+
+      // Toggle done class
+      const card = document.querySelector(`.candidate-card[data-id="${c.id}"]`);
+      if (card) {
+        const isDone = getEndDate(c) <= new Date();
+        card.classList.toggle('done', isDone);
+        // Update progress
+        const fill = card.querySelector('.progress-fill');
+        if (fill && !isDone) fill.style.width = getProgress(c).toFixed(1) + '%';
+      }
+    });
+  }
+
+  // ── Candidate management ──
+  function removeCandidate(id) {
+    candidates = candidates.filter(c => c.id !== id);
+    delete flapStates[id];
+    saveCandidates();
+    renderAll();
+  }
+
+  function addCandidate(name, startDate, months) {
+    if (candidates.length >= 6) return;
+    candidates.push({ id: Date.now().toString(36), name, startDate, months });
+    saveCandidates();
+    renderAll();
+  }
+
+  // ── Modal ──
+  function openModal() {
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('modal-datum').value = today;
+    document.getElementById('modal-naam').value = '';
+    selectedMonths = 2;
+    document.querySelectorAll('.months-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.val) === 2);
+    });
+    document.getElementById('modal-overlay').classList.add('visible');
+    setTimeout(() => document.getElementById('modal-naam').focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('visible');
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+
+  function selectMonths(val, btn) {
+    selectedMonths = val;
+    document.querySelectorAll('.months-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function confirmAdd() {
+    const naam = document.getElementById('modal-naam').value.trim();
+    const datum = document.getElementById('modal-datum').value;
+    if (!naam) { document.getElementById('modal-naam').focus(); return; }
+    if (!datum) { document.getElementById('modal-datum').focus(); return; }
+    addCandidate(naam, datum, selectedMonths);
+    closeModal();
+  }
+
+  // Allow Enter key in modal
+  document.getElementById('modal-naam').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmAdd();
+  });
+
+  // ── Init ──
+  loadCandidates();
+  renderAll();
+  setInterval(updateDisplays, 30000);
+</script>
+</body>
+</html>
