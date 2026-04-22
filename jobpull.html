@@ -136,8 +136,35 @@
     }
     .btn-toggle:hover { border-color: rgba(0,0,0,0.35); color: #1a1a18; }
     .btn-toggle.active { background: #1a1a18; color: #f5f4f0; border-color: #1a1a18; }
-    .btn-toggle.active-green { background: #3b6d11; color: #fff; border-color: #3b6d11; }
-    .btn-toggle.active-red { background: #a32d2d; color: #fff; border-color: #a32d2d; }
+    .btn-toggle.active-green  { background: #3b6d11; color: #fff; border-color: #3b6d11; }
+    .btn-toggle.active-red    { background: #a32d2d; color: #fff; border-color: #a32d2d; }
+    .btn-toggle.active-orange { background: #c47d00; color: #fff; border-color: #c47d00; }
+
+    /* ── Time drum picker ── */
+    .time-picker-wrap {
+      display: flex; align-items: center; gap: 4px;
+      border: 1.5px solid rgba(0,0,0,0.15); border-radius: 10px;
+      padding: 4px 8px; background: #fff; overflow: hidden;
+    }
+    .drum-col {
+      flex: 1; height: 120px; overflow-y: scroll;
+      scroll-snap-type: y mandatory; scrollbar-width: none;
+      position: relative;
+    }
+    .drum-col::-webkit-scrollbar { display: none; }
+    .drum-item {
+      height: 40px; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 500; color: #1a1a18;
+      scroll-snap-align: center; cursor: pointer; border-radius: 6px;
+      transition: background 0.1s;
+    }
+    .drum-item.selected { color: #1a1a18; background: rgba(0,0,0,0.06); border-radius: 6px; }
+    .drum-item:not(.selected) { color: #b0afa8; }
+    .drum-sep { font-size: 20px; font-weight: 600; color: #1a1a18; padding: 0 2px; }
+    /* padding items zodat eerste/laatste item centreerbaar zijn */
+    .drum-col::before, .drum-col::after {
+      content: ''; display: block; height: 40px;
+    }
 
     /* ── Conditional block ── */
     .conditional {
@@ -186,6 +213,10 @@
         background: #333330; border-color: rgba(255,255,255,0.15); color: #e0dfd8;
       }
       input:focus, textarea:focus, select:focus { border-color: #e0dfd8; }
+      .time-picker-wrap { background: #333330; border-color: rgba(255,255,255,0.15); }
+      .drum-item { color: #b0afa8; }
+      .drum-item.selected { color: #e0dfd8; background: rgba(255,255,255,0.08); }
+      .drum-sep { color: #e0dfd8; }
       input.filled, textarea.filled, select.filled { border-color: #97c459; }
       .btn-toggle { border-color: rgba(255,255,255,0.2); color: #888780; }
       .btn-toggle:hover { border-color: rgba(255,255,255,0.4); color: #e0dfd8; }
@@ -224,7 +255,7 @@
       <div class="grid-3">
         <div class="field">
           <label>Sales</label>
-          <input type="text" id="sales-naam" placeholder="Voornaam Achternaam" oninput="markFilled(this)">
+          <input type="text" id="sales-naam" placeholder="Naam Salestijger" oninput="markFilled(this)">
         </div>
         <div class="field">
           <label>Bedrijfsnaam</label>
@@ -274,7 +305,12 @@
         </div>
         <div class="field">
           <label>Tijd afspraak</label>
-          <input type="time" id="tijd" oninput="markFilled(this)">
+          <div class="time-picker-wrap" id="tijd-wrap">
+            <div class="drum-col" id="drum-hour"></div>
+            <div class="drum-sep">:</div>
+            <div class="drum-col" id="drum-min"></div>
+          </div>
+          <input type="hidden" id="tijd">
         </div>
         <div class="field">
           <label>Type afspraak</label>
@@ -330,8 +366,8 @@
         <div class="field">
           <label>Zijn er andere bureaus ingeschakeld?</label>
           <div class="btn-toggle-group">
-            <button class="btn-toggle" onclick="setBureaus('Ja', this)">Ja</button>
             <button class="btn-toggle" onclick="setBureaus('Nee', this)">Nee</button>
+            <button class="btn-toggle" onclick="setBureaus('Ja', this)">Ja</button>
             <button class="btn-toggle" onclick="setBureaus('Onbekend', this)">Onbekend</button>
           </div>
           <input type="hidden" id="bureaus" value="">
@@ -340,8 +376,8 @@
         <div class="field">
           <label>Zijn er kandidaten in proces?</label>
           <div class="btn-toggle-group">
-            <button class="btn-toggle" onclick="setKandidaten('Ja', this)">Ja</button>
             <button class="btn-toggle" onclick="setKandidaten('Nee', this)">Nee</button>
+            <button class="btn-toggle" onclick="setKandidaten('Ja', this)">Ja</button>
             <button class="btn-toggle" onclick="setKandidaten('Onbekend', this)">Onbekend</button>
           </div>
           <input type="hidden" id="kandidaten" value="">
@@ -352,13 +388,32 @@
           <input type="text" id="salaris" placeholder="bijv. € 4.500 – € 6.000 / mnd" oninput="markFilled(this)">
         </div>
 
-        <div class="field">
+        <div class="field full">
           <label>Voorwaarden aanwezig?</label>
-          <div class="btn-toggle-group">
+          <div class="btn-toggle-group" style="max-width:200px;">
             <button class="btn-toggle" onclick="setVoorwaarden('Ja', this)">Ja</button>
             <button class="btn-toggle" onclick="setVoorwaarden('Nee', this)">Nee</button>
           </div>
           <input type="hidden" id="voorwaarden" value="">
+          <div class="conditional" id="voorwaarden-block">
+            <div class="grid-2" style="margin-top:16px;">
+              <div class="field">
+                <label>Fee percentage</label>
+                <div class="text-input-wrap" style="display:flex;align-items:center;border:1.5px solid rgba(0,0,0,0.15);border-radius:8px;overflow:hidden;">
+                  <input type="text" id="fee-pct" placeholder="bijv. 20" inputmode="decimal" oninput="markFilled(this)" style="border:none;padding:10px 12px;font-size:15px;background:transparent;width:100%;outline:none;font-family:inherit;">
+                  <span style="padding:0 12px;color:#73726c;font-size:14px;">%</span>
+                </div>
+              </div>
+              <div class="field">
+                <label>Exclusiviteit</label>
+                <div class="btn-toggle-group">
+                  <button class="btn-toggle" onclick="setExclusief('Exclusief', this)">Exclusief</button>
+                  <button class="btn-toggle" onclick="setExclusief('Niet exclusief', this)">Niet exclusief</button>
+                </div>
+                <input type="hidden" id="exclusief" value="">
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="field full">
@@ -382,6 +437,44 @@
 
   <script>
     emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    // ── Time drum picker ──
+    function buildDrum(colId, items, defaultIndex) {
+      const col = document.getElementById(colId);
+      items.forEach((val, i) => {
+        const div = document.createElement('div');
+        div.className = 'drum-item' + (i === defaultIndex ? ' selected' : '');
+        div.textContent = val;
+        col.appendChild(div);
+      });
+      // Scroll naar default
+      col.scrollTop = defaultIndex * 40;
+      col.addEventListener('scroll', () => {
+        const idx = Math.round(col.scrollTop / 40);
+        col.querySelectorAll('.drum-item').forEach((d, i) => d.classList.toggle('selected', i === idx));
+        updateTijd();
+      });
+    }
+
+    function getDrumValue(colId) {
+      const col = document.getElementById(colId);
+      const idx = Math.round(col.scrollTop / 40);
+      return col.querySelectorAll('.drum-item')[idx]?.textContent || '00';
+    }
+
+    function updateTijd() {
+      const h = getDrumValue('drum-hour');
+      const m = getDrumValue('drum-min');
+      const val = h + ':' + m;
+      document.getElementById('tijd').value = val;
+      document.getElementById('tijd-wrap').classList.add('filled-border');
+    }
+
+    const hours = Array.from({length: 24}, (_, i) => String(i).padStart(2, '0'));
+    const mins  = Array.from({length: 12}, (_, i) => String(i * 5).padStart(2, '0'));
+    buildDrum('drum-hour', hours, 8); // default 08
+    buildDrum('drum-min', mins, 0);   // default :00
+    updateTijd();
 
     // ── State ──
     let senioriteit = '', typeAfspraak = '', auto = '';
@@ -425,22 +518,35 @@
     function setBureaus(val, btn) {
       bureaus = val;
       document.getElementById('bureaus').value = val;
-      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active','active-green','active-red','active-orange'));
+      if (val === 'Nee') btn.classList.add('active-green');
+      else if (val === 'Ja') btn.classList.add('active-red');
+      else btn.classList.add('active-orange');
     }
 
     function setKandidaten(val, btn) {
       kandidaten = val;
       document.getElementById('kandidaten').value = val;
-      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active','active-green','active-red','active-orange'));
+      if (val === 'Nee') btn.classList.add('active-green');
+      else if (val === 'Ja') btn.classList.add('active-red');
+      else btn.classList.add('active-orange');
     }
 
     function setVoorwaarden(val, btn) {
       voorwaarden = val;
       document.getElementById('voorwaarden').value = val;
-      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active','active-green','active-red','active-orange'));
       btn.classList.add(val === 'Ja' ? 'active-green' : 'active-red');
+      document.getElementById('voorwaarden-block').classList.toggle('visible', val === 'Ja');
+    }
+
+    let exclusief = '';
+    function setExclusief(val, btn) {
+      exclusief = val;
+      document.getElementById('exclusief').value = val;
+      btn.closest('.btn-toggle-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active','active-green','active-red'));
+      btn.classList.add('active');
     }
 
     // ── Formulier verzenden ──
@@ -466,6 +572,8 @@
         kandidaten:    document.getElementById('kandidaten').value,
         salaris:       document.getElementById('salaris').value.trim(),
         voorwaarden:   document.getElementById('voorwaarden').value,
+        fee_pct:       document.getElementById('fee-pct')?.value.trim() || '—',
+        exclusief:     document.getElementById('exclusief').value || '—',
         opmerkingen:   document.getElementById('opmerkingen').value.trim() || '—',
       };
 
