@@ -244,6 +244,8 @@ function mapRow(row) {
   return {
     id: row.id,
     bedrijf: row.company_name || '—',
+    company_name: row.company_name || null,
+    company_name_display: row.company_name_display || null,
     functie: row.job_title || '—',
     locatie: row.job_location || '—',
     bron: row.data_source || null,
@@ -297,7 +299,7 @@ async function loadVacatures() {
   showLoading();
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, job_title, company_name, job_location, job_url, data_source, date_scraped')
+    .select('id, job_title, company_name, company_name_display, job_location, job_url, data_source, date_scraped')
     .eq('review_status', 'new')
     .order('created_at', { ascending: false });
 
@@ -343,6 +345,22 @@ function updateStats() {
   document.getElementById('progress').style.width = (current / total * 100) + '%';
 }
 
+async function triggerGoWebhook(vac) {
+  try {
+    await fetch('https://mvl1009.app.n8n.cloud/webhook/44b3d4ee-d84f-432b-8d5b-02052507e9e9', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_id: vac.id,
+        company_name: vac.company_name,
+        company_name_display: vac.company_name_display,
+      }),
+    });
+  } catch (e) {
+    console.warn('Webhook mislukt:', e);
+  }
+}
+
 async function saveDecision(vac, action) {
   const statusMap = { go: 'approved', nogo: 'rejected', skip: 'new' };
   if (action === 'skip') return;
@@ -358,6 +376,7 @@ function doAction(action) {
   decisions.push({ vac, action });
   addLog(vac, action);
   saveDecision(vac, action);
+  if (action === 'go') triggerGoWebhook(vac);
   const animClass = action === 'go' ? 'fly-right' : action === 'nogo' ? 'fly-left' : 'fly-up';
   activeCard.classList.add(animClass);
   if (action === 'go') { const s = activeCard.querySelector('.stamp.go'); if (s) s.style.opacity = '1'; }
