@@ -161,6 +161,11 @@
     .drum-item.selected { color: #1a1a18; background: rgba(0,0,0,0.06); border-radius: 6px; }
     .drum-item:not(.selected) { color: #b0afa8; }
     .drum-sep { font-size: 20px; font-weight: 600; color: #1a1a18; padding: 0 2px; }
+    .tijd-bevestiging {
+      display: flex; align-items: center; gap: 6px; margin-top: 8px;
+      font-size: 13px; color: #3b6d11; font-weight: 500;
+    }
+    .tijd-bevestiging span { font-weight: 700; }
     /* padding items zodat eerste/laatste item centreerbaar zijn */
     .drum-col::before, .drum-col::after {
       content: ''; display: block; height: 40px;
@@ -217,6 +222,7 @@
       .drum-item { color: #b0afa8; }
       .drum-item.selected { color: #e0dfd8; background: rgba(255,255,255,0.08); }
       .drum-sep { color: #e0dfd8; }
+      .tijd-bevestiging { color: #97c459; }
       input.filled, textarea.filled, select.filled { border-color: #97c459; }
       .btn-toggle { border-color: rgba(255,255,255,0.2); color: #888780; }
       .btn-toggle:hover { border-color: rgba(255,255,255,0.4); color: #e0dfd8; }
@@ -309,6 +315,13 @@
             <div class="drum-col" id="drum-hour"></div>
             <div class="drum-sep">:</div>
             <div class="drum-col" id="drum-min"></div>
+          </div>
+          <div class="tijd-bevestiging" id="tijd-bevestiging">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <circle cx="6.5" cy="6.5" r="6.5" fill="#3b6d11"/>
+              <path d="M3.5 6.5L5.5 8.5L9.5 4.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span id="tijd-label">08:00</span> geselecteerd
           </div>
           <input type="hidden" id="tijd">
         </div>
@@ -468,6 +481,7 @@
       const val = h + ':' + m;
       document.getElementById('tijd').value = val;
       document.getElementById('tijd-wrap').classList.add('filled-border');
+      document.getElementById('tijd-label').textContent = val;
     }
 
     const hours = Array.from({length: 24}, (_, i) => String(i).padStart(2, '0'));
