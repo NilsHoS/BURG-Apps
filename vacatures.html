@@ -149,6 +149,9 @@
   .btn-go { width: 64px; height: 64px; background: rgba(29,185,84,0.12); border: 2px solid rgba(29,185,84,0.4); color: var(--go); border-radius: 50%; font-size: 22px; }
   .btn-go:hover { background: rgba(29,185,84,0.22); box-shadow: 0 0 20px rgba(29,185,84,0.2); }
   .btn-skip { width: 44px; height: 44px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 50%; font-size: 16px; }
+  .btn-undo { width: 44px; height: 44px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 50%; font-size: 18px; }
+  .btn-undo:not(:disabled):hover { background: var(--surface); color: var(--text); }
+  .btn-undo:disabled { opacity: 0.3; cursor: not-allowed; }
 
   .empty { display: none; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); text-align: center; gap: 12px; }
   .empty-icon { font-size: 48px; margin-bottom: 8px; }
@@ -218,6 +221,7 @@
 
 <div class="actions" id="actions">
   <button class="btn btn-nogo" onclick="doAction('nogo')" title="No go">✕</button>
+  <button class="btn btn-undo" id="btn-undo" onclick="undoLast()" title="Herstel vorige beslissing" disabled>↩</button>
   <button class="btn btn-skip" onclick="doAction('skip')" title="Later">◦◦</button>
   <button class="btn btn-go" onclick="doAction('go')" title="Go">✓</button>
 </div>
@@ -370,10 +374,38 @@ async function saveDecision(vac, action) {
     .eq('id', vac.id);
 }
 
+function updateUndoBtn() {
+  const btn = document.getElementById('btn-undo');
+  if (btn) btn.disabled = decisions.length === 0;
+}
+
+async function undoLast() {
+  if (decisions.length === 0) return;
+  const last = decisions.pop();
+  current--;
+  if (last.action !== 'skip') {
+    await supabase
+      .from('jobs')
+      .update({ review_status: 'new', reviewed_at: null })
+      .eq('id', last.vac.id);
+  }
+  const list = document.getElementById('log-list');
+  const firstItem = list.querySelector('.log-item');
+  if (firstItem) {
+    firstItem.remove();
+    if (!list.querySelector('.log-item')) {
+      list.innerHTML = '<p style="font-size:12px;color:var(--text-muted)">Nog geen beslissingen.</p>';
+    }
+  }
+  renderStack();
+  updateUndoBtn();
+}
+
 function doAction(action) {
   if (current >= total || !activeCard) return;
   const vac = vacatures[current];
   decisions.push({ vac, action });
+  updateUndoBtn();
   addLog(vac, action);
   saveDecision(vac, action);
   if (action === 'go') triggerGoWebhook(vac);
@@ -445,6 +477,7 @@ async function resetDeck() {
 }
 
 window.doAction = doAction;
+window.undoLast = undoLast;
 window.toggleLog = toggleLog;
 window.resetDeck = resetDeck;
 
