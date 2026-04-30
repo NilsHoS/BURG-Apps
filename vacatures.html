@@ -354,7 +354,7 @@ async function loadVacatures() {
   const { data, error } = await supabase
     .from('jobs')
     .select('id, job_title, company_name, company_name_display, job_location, job_url, data_source, date_scraped, salary, employment_type, industry, recruiter_name, recruiter_headline, company_website, job_description')
-    .eq('review_status', 'new')
+    .in('review_status', ['pending', 'new'])
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -416,7 +416,7 @@ async function triggerGoWebhook(vac) {
 }
 
 async function saveDecision(vac, action) {
-  const statusMap = { go: 'approved', nogo: 'rejected', skip: 'new' };
+  const statusMap = { go: 'approved', nogo: 'rejected', skip: 'pending' };
   if (action === 'skip') return;
   await supabase
     .from('jobs')
@@ -436,7 +436,7 @@ async function undoLast() {
   if (last.action !== 'skip') {
     await supabase
       .from('jobs')
-      .update({ review_status: 'new', reviewed_at: null })
+      .update({ review_status: 'pending', reviewed_at: null })
       .eq('id', last.vac.id);
   }
   const list = document.getElementById('log-list');
