@@ -26,7 +26,7 @@
     --border: rgba(255,255,255,0.08);
     --text: #f0f0f5;
     --text-muted: #8888a0;
-    --card-w: min(380px, 92vw);
+    --card-w: min(480px, 92vw);
   }
 
   body {
@@ -43,7 +43,7 @@
 
   .header {
     width: 100%;
-    max-width: 500px;
+    max-width: 560px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -61,11 +61,11 @@
   .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .stat strong { font-size: 16px; color: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; }
 
-  .progress-bar { width: 100%; max-width: 500px; padding: 0 20px 14px; }
+  .progress-bar { width: 100%; max-width: 560px; padding: 0 20px 14px; }
   .progress-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
   .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue-light), var(--go)); border-radius: 2px; transition: width 0.4s ease; }
 
-  .stack { position: relative; width: var(--card-w); height: 500px; margin: 10px 0 16px; }
+  .stack { position: relative; width: var(--card-w); height: 600px; margin: 10px 0 16px; }
 
   .card {
     position: absolute;
@@ -153,7 +153,7 @@
   .btn-undo:not(:disabled):hover { background: var(--surface); color: var(--text); }
   .btn-undo:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  .empty { display: none; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); text-align: center; gap: 12px; }
+  .empty { display: none; flex-direction: column; align-items: center; justify-content: center; height: 600px; width: var(--card-w); text-align: center; gap: 12px; }
   .empty-icon { font-size: 48px; margin-bottom: 8px; }
   .empty h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; }
   .empty p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
@@ -179,10 +179,10 @@
   .fly-right { animation: flyRight 0.35s ease forwards; }
   .fly-up { animation: flyUp 0.3s ease forwards; }
 
-  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); gap: 14px; color: var(--text-muted); font-size: 14px; }
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 600px; width: var(--card-w); gap: 14px; color: var(--text-muted); font-size: 14px; }
   .spinner { width: 36px; height: 36px; border: 3px solid var(--surface2); border-top-color: var(--blue-light); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .error-msg { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); gap: 10px; text-align: center; }
+  .error-msg { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 600px; width: var(--card-w); gap: 10px; text-align: center; }
   .error-msg span { font-size: 36px; }
   .error-msg p { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
   .card-link { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--blue-light); text-decoration: none; opacity: 0.8; }
