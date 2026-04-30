@@ -185,8 +185,26 @@
   .error-msg { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; width: var(--card-w); gap: 10px; text-align: center; }
   .error-msg span { font-size: 36px; }
   .error-msg p { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
-  .card-link { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--blue-light); text-decoration: none; margin-top: 8px; opacity: 0.8; }
+  .card-link { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--blue-light); text-decoration: none; opacity: 0.8; }
   .card-link:hover { opacity: 1; }
+
+  .card { overflow: hidden; }
+
+  .card-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .badge { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-type { background: rgba(45,125,210,0.15); color: var(--blue-light); }
+  .badge-industry { background: rgba(244,162,97,0.15); color: var(--amber); }
+
+  .card-desc-wrap { margin-bottom: 10px; }
+  .card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+  .card-desc.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .btn-read-more { background: none; border: none; color: var(--blue-light); font-size: 11px; cursor: pointer; padding: 4px 0 0; font-family: 'DM Sans', sans-serif; display: block; }
+
+  .card-recruiter { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
+  .recruiter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 3px; }
+  .recruiter-name-val { font-size: 13px; font-weight: 500; }
+  .recruiter-headline-val { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-footer { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; align-items: center; }
 </style>
 </head>
 <body>
@@ -255,7 +273,18 @@ function mapRow(row) {
     bron: row.data_source || null,
     url: row.job_url || null,
     datumGescraped: row.date_scraped ? new Date(row.date_scraped).toLocaleDateString('nl-NL') : null,
+    salary: row.salary || null,
+    employment_type: row.employment_type || null,
+    industry: row.industry || null,
+    recruiter_name: row.recruiter_name || null,
+    recruiter_headline: row.recruiter_headline || null,
+    company_website: row.company_website || null,
+    job_description: row.job_description || null,
   };
+}
+
+function esc(str) {
+  return str ? str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
 }
 
 function buildCard(vac, zIndex, cls) {
@@ -263,26 +292,47 @@ function buildCard(vac, zIndex, cls) {
   div.className = 'card ' + (cls || '');
   div.style.zIndex = zIndex;
 
-  const metaExtra = [
-    vac.bron ? `<div class="meta-item"><span class="meta-label">🔍 Bron</span><span class="meta-value">${vac.bron}</span></div>` : '',
-    vac.datumGescraped ? `<div class="meta-item"><span class="meta-label">📅 Gevonden</span><span class="meta-value">${vac.datumGescraped}</span></div>` : '',
-  ].join('');
+  const badgesHtml = [
+    vac.employment_type ? `<span class="badge badge-type">${esc(vac.employment_type)}</span>` : '',
+    vac.industry ? `<span class="badge badge-industry">${esc(vac.industry)}</span>` : '',
+  ].filter(Boolean).join('');
 
-  const linkHtml = vac.url
-    ? `<a class="card-link" href="${vac.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Bekijk vacature</a>`
-    : '';
+  const metaHtml = [
+    `<div class="meta-item"><span class="meta-label">📍 Locatie</span><span class="meta-value">${esc(vac.locatie)}</span></div>`,
+    vac.salary ? `<div class="meta-item"><span class="meta-label">💶 Salaris</span><span class="meta-value salary">${esc(vac.salary)}</span></div>` : '',
+    vac.bron ? `<div class="meta-item"><span class="meta-label">🔍 Bron</span><span class="meta-value">${esc(vac.bron)}</span></div>` : '',
+    vac.datumGescraped ? `<div class="meta-item"><span class="meta-label">📅 Gevonden</span><span class="meta-value">${esc(vac.datumGescraped)}</span></div>` : '',
+  ].filter(Boolean).join('');
+
+  const descHtml = vac.job_description ? `
+    <div class="card-desc-wrap">
+      <div class="card-desc collapsed">${esc(vac.job_description)}</div>
+      <button class="btn-read-more" onclick="event.stopPropagation();var d=this.previousElementSibling;d.classList.toggle('collapsed');this.textContent=d.classList.contains('collapsed')?'Lees meer ↓':'Lees minder ↑'">Lees meer ↓</button>
+    </div>` : '';
+
+  const recruiterHtml = vac.recruiter_name ? `
+    <div class="card-recruiter">
+      <div class="recruiter-label">Geplaatst door</div>
+      <div class="recruiter-name-val">${esc(vac.recruiter_name)}</div>
+      ${vac.recruiter_headline ? `<div class="recruiter-headline-val">${esc(vac.recruiter_headline)}</div>` : ''}
+    </div>` : '<div class="card-recruiter" style="margin-top:auto;border-top:none;padding-top:0"></div>';
+
+  const footerLinks = [
+    vac.url ? `<a class="card-link" href="${esc(vac.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Bekijk vacature</a>` : '',
+    vac.company_website ? `<a class="card-link" href="${esc(vac.company_website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🌐 Website</a>` : '',
+  ].filter(Boolean).join('');
 
   div.innerHTML = `
     <div class="stamp go">GO</div>
     <div class="stamp nogo">NO GO</div>
-    <div class="card-company">${vac.bedrijf}</div>
-    <div class="card-role">${vac.functie}</div>
+    <div class="card-company">${esc(vac.bedrijf)}</div>
+    <div class="card-role">${esc(vac.functie)}</div>
+    ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
     <div class="card-divider"></div>
-    <div class="card-meta">
-      <div class="meta-item"><span class="meta-label">📍 Locatie</span><span class="meta-value">${vac.locatie}</span></div>
-      ${metaExtra}
-    </div>
-    ${linkHtml}`;
+    <div class="card-meta">${metaHtml}</div>
+    ${descHtml}
+    ${recruiterHtml}
+    ${footerLinks ? `<div class="card-footer">${footerLinks}</div>` : ''}`;
   return div;
 }
 
@@ -303,7 +353,7 @@ async function loadVacatures() {
   showLoading();
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, job_title, company_name, company_name_display, job_location, job_url, data_source, date_scraped')
+    .select('id, job_title, company_name, company_name_display, job_location, job_url, data_source, date_scraped, salary, employment_type, industry, recruiter_name, recruiter_headline, company_website, job_description')
     .eq('review_status', 'new')
     .order('created_at', { ascending: false });
 
