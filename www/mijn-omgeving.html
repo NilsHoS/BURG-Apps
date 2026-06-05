@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>BURG — Mijn Omgeving</title>
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="stylesheet" href="./styles-dark.css">
+<style>
+  :root {
+    --card-w: min(480px, 92vw);
+  }
+
+  /* ── Auth redirect ── */
+  #auth-check { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px; gap: 10px; }
+
+  /* ── App shell ── */
+  body { display: flex; flex-direction: column; align-items: center; }
+  #app { display: none; width: 100%; flex-direction: column; align-items: center; }
+
+  /* ── Header (pagina-breedte override) ── */
+  .header { width: 100%; max-width: 700px; }
+  .header-right { gap: 10px; }
+  .user-chip { font-size: 12px; color: var(--text-muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; }
+  .logout-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .logout-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* ── Presence block ── */
+  .presence-block { width: 100%; max-width: 700px; margin: 0 20px 16px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+  .presence-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 500; margin-bottom: 12px; }
+  .presence-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .presence-item { display: flex; align-items: center; gap: 7px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px; cursor: pointer; transition: border-color 0.15s; user-select: none; }
+  .presence-item:hover { border-color: rgba(255,255,255,0.15); }
+  .presence-item input[type=checkbox] { accent-color: var(--go); width: 15px; height: 15px; cursor: pointer; }
+  .presence-name { font-size: 13px; font-weight: 500; }
+  .presence-fte { font-size: 11px; color: var(--text-muted); }
+  .presence-confirm-btn { background: var(--blue-light); color: white; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; padding: 9px 20px; cursor: pointer; transition: opacity 0.15s; }
+  .presence-confirm-btn:disabled { opacity: 0.35; cursor: default; }
+  .presence-confirm-btn:not(:disabled):hover { opacity: 0.85; }
+
+  /* ── Tab bar ── */
+  .tab-bar { width: 100%; max-width: 700px; padding: 0 20px 0; display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0; }
+  .tab-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px 20px 0 0; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 18px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .tab-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.14); }
+  .tab-btn.active { background: var(--surface); border-color: var(--border); border-bottom-color: var(--surface); color: var(--text); font-weight: 500; }
+  .tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; background: var(--blue-light); color: white; border-radius: 20px; font-size: 10px; font-weight: 700; padding: 0 4px; margin-left: 5px; vertical-align: middle; }
+  .tab-badge.red { background: var(--nogo); }
+
+  /* ── Tab panels ── */
+  .tab-panel { display: none; width: 100%; flex-direction: column; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 0 16px 16px 16px; border-top-left-radius: 0; }
+  .tab-panel.active { display: flex; }
+  .tab-wrap { width: 100%; max-width: 700px; padding: 0 20px; }
+
+  /* ── Swipe tab ── */
+  .swipe-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 20px 0 24px; }
+  .swipe-stats { display: flex; gap: 20px; font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+  .progress-bar { width: 100%; max-width: var(--card-w); padding: 0 0 12px; }
+  .progress-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue-light), var(--go)); border-radius: 2px; transition: width 0.4s ease; }
+  .stack { position: relative; width: var(--card-w); height: 580px; margin: 0 0 14px; }
+  .swipe-card { position: absolute; inset: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s ease; will-change: transform; touch-action: none; overflow: hidden; }
+  .swipe-card:active { cursor: grabbing; }
+  .swipe-card.behind-1 { transform: scale(0.95) translateY(12px); filter: brightness(0.7); pointer-events: none; }
+  .swipe-card.behind-2 { transform: scale(0.90) translateY(24px); filter: brightness(0.5); pointer-events: none; }
+  .stamp { position: absolute; top: 24px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: 2px; border: 3px solid; padding: 4px 12px; border-radius: 8px; opacity: 0; pointer-events: none; z-index: 10; }
+  .stamp.go { left: 18px; color: var(--go); border-color: var(--go); transform: rotate(-12deg); }
+  .stamp.nogo { right: 18px; color: var(--nogo); border-color: var(--nogo); transform: rotate(12deg); }
+  .sc-company { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; line-height: 1.2; margin-bottom: 5px; }
+  .sc-role { font-size: 14px; color: var(--blue-light); font-weight: 500; margin-bottom: 16px; }
+  .sc-divider { height: 1px; background: var(--border); margin-bottom: 14px; }
+  .sc-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .sc-meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .sc-meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+  .sc-meta-value { font-size: 13px; font-weight: 500; }
+  .sc-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .sc-badge { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .sc-badge-type { background: rgba(45,125,210,0.15); color: var(--blue-light); }
+  .sc-badge-industry { background: rgba(244,162,97,0.15); color: var(--amber); }
+  .sc-desc-wrap { margin-bottom: 8px; overflow: hidden; }
+  .sc-desc { font-size: 12px; color: var(--text-muted); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .sc-desc.expanded { display: block; -webkit-line-clamp: unset; overflow: visible; }
+  .swipe-card.desc-expanded { overflow-y: auto; cursor: default; }
+  .swipe-card.desc-expanded .sc-desc-wrap { overflow: visible; flex-shrink: 0; }
+  .sc-read-more { background: none; border: none; color: var(--blue-light); font-size: 11px; cursor: pointer; padding: 4px 0 0; font-family: 'DM Sans', sans-serif; display: block; }
+  .sc-recruiter { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
+  .sc-recruiter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 3px; }
+  .sc-recruiter-name { font-size: 13px; font-weight: 500; }
+  .sc-footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .sc-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--blue-light); text-decoration: none; opacity: 0.8; }
+  .sc-link:hover { opacity: 1; }
+  .swipe-hint { font-size: 11px; color: var(--text-muted); text-align: center; margin-bottom: 12px; letter-spacing: 0.5px; }
+  .actions { display: flex; gap: 14px; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .btn { display: flex; align-items: center; justify-content: center; border: none; border-radius: 50px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; flex-shrink: 0; }
+  .btn:active { transform: scale(0.94); }
+  .btn-nogo { width: 62px; height: 62px; background: rgba(230,57,70,0.12); border: 2px solid rgba(230,57,70,0.4); color: var(--nogo); border-radius: 50%; font-size: 22px; }
+  .btn-nogo:hover { background: rgba(230,57,70,0.22); box-shadow: 0 0 20px rgba(230,57,70,0.2); }
+  .btn-go { width: 62px; height: 62px; background: rgba(29,185,84,0.12); border: 2px solid rgba(29,185,84,0.4); color: var(--go); border-radius: 50%; font-size: 22px; }
+  .btn-go:hover { background: rgba(29,185,84,0.22); box-shadow: 0 0 20px rgba(29,185,84,0.2); }
+  .btn-skip { height: 42px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 20px; font-size: 12px; padding: 0 14px; font-family: 'DM Sans', sans-serif; }
+  .btn-undo { width: 42px; height: 42px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 50%; font-size: 17px; }
+  .btn-undo:not(:disabled):hover { background: var(--surface); color: var(--text); }
+  .btn-undo:disabled { opacity: 0.3; cursor: not-allowed; }
+  .swipe-empty { display: none; flex-direction: column; align-items: center; justify-content: center; height: 580px; width: var(--card-w); text-align: center; gap: 12px; }
+  .swipe-empty h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; }
+  .swipe-empty p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+  /* ── Pipeline + Sales tabs (list view) ── */
+  .list-section { width: 100%; max-width: 700px; padding: 20px 20px 40px; display: flex; flex-direction: column; gap: 12px; }
+  .list-loading { padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--text-muted); font-size: 14px; }
+  .list-empty { padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--text-muted); }
+  .list-empty span { font-size: 36px; }
+  .vcard { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; transition: border-color 0.15s; }
+  .vcard:hover { border-color: rgba(255,255,255,0.12); }
+  .vcard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .vcard-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; line-height: 1.2; }
+  .vcard-company { font-size: 14px; color: var(--blue-light); font-weight: 500; margin-top: 3px; }
+  .vcard-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .badge-go { flex-shrink: 0; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; background: rgba(29,185,84,0.15); color: var(--go); }
+  .badge-nogo-sc { flex-shrink: 0; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; background: rgba(230,57,70,0.12); color: var(--nogo); }
+
+  /* Status buttons (pipeline-specifieke statussen) */
+  .status-btn.active[data-status="On hold"] { border-color: rgba(136,136,160,0.4); color: var(--text-muted); background: rgba(136,136,160,0.08); }
+  .status-btn.active[data-status="Nieuwe kans"] { border-color: rgba(45,125,210,0.6); color: var(--blue-light); background: rgba(45,125,210,0.1); }
+  .status-btn.active[data-status="Gemaild"] { border-color: rgba(100,160,220,0.6); color: #7baee0; background: rgba(100,160,220,0.1); }
+  .status-btn.active[data-status="Lopend contact"] { border-color: rgba(155,93,229,0.6); color: var(--purple); background: rgba(155,93,229,0.1); }
+  .status-btn.active[data-status="Hot"] { border-color: rgba(230,57,70,0.6); color: #e87070; background: rgba(230,57,70,0.1); }
+  .status-btn.active[data-status="Jobpull"] { border-color: rgba(244,162,97,0.6); color: var(--amber); background: rgba(244,162,97,0.1); }
+  .status-btn.active[data-status="Closed won"] { border-color: rgba(29,185,84,0.6); color: var(--go); background: rgba(29,185,84,0.1); }
+  .status-btn.active[data-status="Closed loss"] { border-color: rgba(230,57,70,0.3); color: rgba(230,57,70,0.55); background: rgba(230,57,70,0.05); }
+
+  /* Sales section in vcard */
+  .vcard-sales { background: var(--surface); border-radius: 10px; padding: 12px 14px; margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Pipeline action bar */
+  .pipeline-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btn-doorsturen { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .btn-doorsturen:hover { border-color: var(--blue-light); color: var(--blue-light); }
+
+  /* Sales summary chips */
+  .sales-summary { width: 100%; max-width: 700px; padding: 16px 20px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Swipe view toggle ── */
+  .swipe-view-toggle { display: flex; gap: 6px; padding: 16px 20px 0; width: 100%; max-width: 700px; }
+  .view-toggle-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 6px 18px; cursor: pointer; transition: all 0.15s; }
+  .view-toggle-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+  .view-toggle-btn.active { background: var(--blue-light); border-color: var(--blue-light); color: white; }
+
+  /* ── Swipe lijst view ── */
+  .swipe-lijst-wrap { width: 100%; max-width: 700px; margin: 0 auto; padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 8px; }
+  .swipe-lijst-row { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .swipe-lijst-row:hover { border-color: rgba(255,255,255,0.18); }
+  .slr-title { font-weight: 600; font-size: 14px; line-height: 1.2; }
+  .slr-company { font-size: 12px; color: var(--blue-light); margin-top: 2px; }
+  .slr-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+  .slr-chip { font-size: 11px; color: var(--text-muted); }
+  .slr-source { font-size: 11px; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2px 8px; white-space: nowrap; align-self: start; margin-top: 3px; }
+  .slr-arrow { font-size: 14px; color: var(--text-muted); align-self: center; }
+
+  /* ── Card overlay (lijst → kaart) ── */
+  .card-overlay { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; padding: 56px 20px 80px; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+  .card-overlay.open { pointer-events: auto; opacity: 1; }
+  .card-overlay-backdrop { position: fixed; inset: 0; background: rgba(10,10,15,0.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .card-overlay-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: var(--card-w); }
+  .card-overlay-close { position: absolute; top: -14px; right: -14px; width: 34px; height: 34px; background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: background 0.15s, border-color 0.15s; line-height: 1; }
+  .card-overlay-close:hover { background: var(--surface); border-color: rgba(255,255,255,0.2); }
+  #ov-stack { position: relative; width: var(--card-w); height: auto; margin-bottom: 14px; }
+  .swipe-card.in-overlay { position: relative; inset: unset; height: auto; overflow: visible; cursor: default; touch-action: auto; }
+
+  /* ── Second Check tab ── */
+  .sc2-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+  .sc2-card:hover { border-color: rgba(255,255,255,0.12); }
+  .sc2-countdown { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .sc2-countdown.urgent { background: rgba(230,57,70,0.12); color: var(--nogo); border: 1px solid rgba(230,57,70,0.35); }
+  .sc2-countdown.normal { background: rgba(244,162,97,0.12); color: var(--amber); border: 1px solid rgba(244,162,97,0.35); }
+  .sc2-countdown.fine { background: rgba(45,125,210,0.1); color: var(--blue-light); border: 1px solid rgba(45,125,210,0.3); }
+  .sc2-nogo-reason { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; outline: none; cursor: pointer; transition: border-color 0.15s; margin-bottom: 0; }
+  .sc2-nogo-reason:focus { border-color: var(--blue-light); }
+  .sc2-nogo-reason option { background: #1c1c27; }
+  .btn-approve { background: rgba(29,185,84,0.12); border: 1px solid rgba(29,185,84,0.4); border-radius: 8px; color: var(--go); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; transition: background 0.15s; }
+  .btn-approve:hover { background: rgba(29,185,84,0.22); }
+  .sc2-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; color: var(--text-muted); margin: 10px 0; }
+  .sc2-detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+  .sc2-detail-value { color: var(--text); font-weight: 500; margin-top: 2px; }
+  .sc2-desc-toggle { background: none; border: none; color: var(--blue-light); font-size: 12px; cursor: pointer; padding: 8px 0 2px; font-family: 'DM Sans', sans-serif; text-align: left; display: block; }
+  .sc2-desc-body { font-size: 12px; color: var(--text-muted); line-height: 1.65; margin-top: 6px; white-space: pre-wrap; word-break: break-word; display: none; }
+  .sc2-desc-body.open { display: block; }
+
+  /* ── Analytics tab ── */
+  #tab-analytics { padding: 0; border-radius: 0 0 16px 16px; overflow: hidden; }
+  .analytics-frame { width: 100%; height: calc(100vh - 260px); min-height: 500px; border: none; display: block; background: var(--bg); }
+
+  /* ── Modals ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 600; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .modal-box { position: fixed; top: 50%; left: 50%; width: min(420px, 92vw); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; z-index: 601; transform: translate(-50%, -50%) scale(0.9); opacity: 0; pointer-events: none; transition: transform 0.25s cubic-bezier(0.32,0.72,0,1), opacity 0.2s; }
+  .modal-box.open { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .modal-select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 12px; outline: none; cursor: pointer; transition: border-color 0.15s; margin-bottom: 14px; }
+  .modal-select:focus { border-color: var(--blue-light); }
+  .modal-select option { background: #1c1c27; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-modal-cancel { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 9px 18px; cursor: pointer; transition: border-color 0.15s; }
+  .btn-modal-cancel:hover { border-color: rgba(255,255,255,0.2); }
+  .btn-modal-confirm { background: var(--blue-light); color: white; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; padding: 9px 18px; cursor: pointer; transition: opacity 0.15s; }
+  .btn-modal-confirm:hover { opacity: 0.85; }
+
+  /* No-go popup (swipe) */
+  .nogo-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 700; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .nogo-overlay.open { opacity: 1; pointer-events: auto; }
+  .nogo-popup { position: fixed; top: 50%; left: 50%; width: min(480px, 92vw); background: var(--surface); border: 1px solid rgba(230,57,70,0.25); border-radius: 20px; padding: 24px; z-index: 701; transform: translate(-50%, -50%) scale(0.9); opacity: 0; pointer-events: none; transition: transform 0.25s cubic-bezier(0.32,0.72,0,1), opacity 0.2s; }
+  .nogo-popup.open { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+  .nogo-popup-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .nogo-popup-icon { font-size: 26px; flex-shrink: 0; }
+  .nogo-popup-job { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; line-height: 1.3; margin-bottom: 2px; }
+  .nogo-popup-company { font-size: 13px; color: var(--blue-light); }
+  .nogo-popup-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 10px; }
+  .nogo-popup-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .nogo-reason-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 12px; padding: 10px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; text-align: left; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; display: flex; align-items: center; gap: 7px; }
+  .nogo-reason-btn:hover { background: rgba(230,57,70,0.1); border-color: rgba(230,57,70,0.4); color: var(--nogo); }
+  .nogo-reason-btn.full-width { grid-column: 1 / -1; }
+  .nogo-reason-emoji { font-size: 15px; flex-shrink: 0; }
+  .nogo-back-btn { background: none; border: none; color: var(--text-muted); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; padding: 14px 0 0; display: block; width: 100%; text-align: center; transition: color 0.15s; }
+  .nogo-back-btn:hover { color: var(--text); }
+
+  /* Desc modal */
+  .desc-modal { position: fixed; inset: 0; z-index: 800; background: var(--surface); display: flex; flex-direction: column; }
+  .desc-modal.hidden { display: none; }
+  .desc-modal-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .desc-modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; line-height: 1.3; }
+  .desc-modal-close { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 50%; width: 34px; height: 34px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .desc-modal-body { flex: 1; overflow-y: auto; padding: 20px; font-size: 14px; line-height: 1.75; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; }
+
+  @keyframes flyLeft { to { transform: translateX(-140%) rotate(-25deg); opacity: 0; } }
+  @keyframes flyRight { to { transform: translateX(140%) rotate(25deg); opacity: 0; } }
+  @keyframes flyUp { to { transform: translateY(-80%) scale(0.8); opacity: 0; } }
+  .fly-left { animation: flyLeft 0.35s ease forwards; }
+  .fly-right { animation: flyRight 0.35s ease forwards; }
+  .fly-up { animation: flyUp 0.3s ease forwards; }
+</style>
+</head>
+<body>
+
+<div id="auth-check">
+  <div class="spinner"></div>
+  <span>Laden…</span>
+</div>
+
+<div id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">BURG <span>Omgeving</span></div>
+    <div class="header-right">
+      <span class="user-chip" id="user-chip"></span>
+      <button class="logout-btn" onclick="doLogout()">Uitloggen</button>
+    </div>
+  </div>
+
+  <!-- Presence block -->
+  <div class="presence-block" id="presence-block">
+    <div class="presence-title">Aanwezigheid vandaag</div>
+    <div class="presence-grid" id="presence-grid"></div>
+    <button class="presence-confirm-btn" id="presence-confirm-btn" disabled onclick="confirmPresence()">Bevestig aanwezigheid</button>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-tab="swipen" onclick="switchTab('swipen')">Swipen <span class="tab-badge" id="badge-swipen">0</span></button>
+    <button class="tab-btn" data-tab="vacatures" onclick="switchTab('vacatures')">Mijn Vacatures</button>
+  </div>
+
+  <!-- Tab: Swipen -->
+  <div class="tab-panel active" id="tab-swipen" style="min-height:680px">
+    <div class="swipe-view-toggle">
+      <button class="view-toggle-btn active" id="toggle-stapel" onclick="setSwipeView('stapel')">Stapel</button>
+      <button class="view-toggle-btn" id="toggle-lijst" onclick="setSwipeView('lijst')">Lijst</button>
+    </div>
+    <div id="swipe-lijst-view" style="display:none;width:100%;align-self:stretch">
+      <div class="swipe-lijst-wrap" id="swipe-lijst-container"></div>
+    </div>
+    <div id="swipe-stapel-view" style="width:100%;display:flex;flex-direction:column;align-items:center">
+    <div class="swipe-wrap">
+      <div class="swipe-stats">
+        <div class="stat"><strong id="sw-go">0</strong>Go</div>
+        <div class="stat"><strong id="sw-nogo">0</strong>No go</div>
+        <div class="stat"><strong id="sw-left">—</strong>Over</div>
+      </div>
+      <div class="progress-bar"><div class="progress-track"><div class="progress-fill" id="sw-progress" style="width:0%"></div></div></div>
+      <div class="stack" id="sw-stack"></div>
+      <div class="swipe-empty" id="sw-empty">
+        <div style="font-size:48px;margin-bottom:8px">✅</div>
+        <h3>Alles beoordeeld</h3>
+        <p>Je hebt alle jouw vacatures bekeken.</p>
+      </div>
+      <div class="swipe-hint" id="sw-hint">← swipe of gebruik de knoppen →</div>
+      <div class="actions" id="sw-actions">
+        <button class="btn btn-nogo" onclick="swDoAction('nogo')" title="No go">✕</button>
+        <button class="btn btn-undo" id="sw-undo-btn" onclick="swUndo()" disabled>↩</button>
+        <button class="btn btn-skip" onclick="swDoAction('skip')" title="Later">Later</button>
+        <button class="btn btn-go" onclick="swDoAction('go')" title="Go">✓</button>
+      </div>
+    </div>
+    </div><!-- /swipe-stapel-view -->
+  </div>
+
+  <!-- Tab: Mijn Vacatures -->
+  <div class="tab-panel" id="tab-vacatures">
+    <div class="sales-summary" id="mv-summary"></div>
+    <div class="list-section" id="mv-list"></div>
+  </div>
+
+  <!-- Tab: Second Check (Nils only) -->
+  <div class="tab-panel" id="tab-secondcheck" style="display:none">
+    <div class="list-section" id="sc2-list"></div>
+  </div>
+
+  <!-- Tab: Analytics (Nils only) -->
+  <div class="tab-panel" id="tab-analytics" style="display:none">
+    <iframe class="analytics-frame" id="analytics-frame" src="" title="Analytics"></iframe>
+  </div>
+</div>
+
+<!-- Card overlay (lijst → kaart) -->
+<div id="card-overlay" class="card-overlay">
+  <div class="card-overlay-backdrop" onclick="closeCardOverlay()"></div>
+  <div class="card-overlay-inner">
+    <button class="card-overlay-close" onclick="closeCardOverlay()" title="Sluiten">×</button>
+    <div id="ov-stack"></div>
+    <div class="swipe-hint">← swipe of gebruik de knoppen →</div>
+    <div class="actions">
+      <button class="btn btn-nogo" onclick="swDoAction('nogo')" title="No go">✕</button>
+      <button class="btn btn-skip" onclick="swDoAction('skip')" title="Later">Later</button>
+      <button class="btn btn-go" onclick="swDoAction('go')" title="Go">✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- No-go popup -->
+<div class="nogo-overlay" id="nogo-overlay" onclick="closeNogoPopup()"></div>
+<div class="nogo-popup" id="nogo-popup">
+  <div class="nogo-popup-header">
+    <div class="nogo-popup-icon">✕</div>
+    <div>
+      <div class="nogo-popup-job" id="nogo-popup-title"></div>
+      <div class="nogo-popup-company" id="nogo-popup-company"></div>
+    </div>
+  </div>
+  <div class="nogo-popup-label">Waarom geen match?</div>
+  <div class="nogo-popup-reasons">
+    <button class="nogo-reason-btn" onclick="selectNogoReason('Verkeerde sector')"><span class="nogo-reason-emoji">🏭</span>Verkeerde sector</button>
+    <button class="nogo-reason-btn" onclick="selectNogoReason('Te operationeel')"><span class="nogo-reason-emoji">🔧</span>Te operationeel</button>
+    <button class="nogo-reason-btn" onclick="selectNogoReason('Intermediair / uitzendbureau')"><span class="nogo-reason-emoji">🤝</span>Intermediair</button>
+    <button class="nogo-reason-btn" onclick="selectNogoReason('Te junior / stage')"><span class="nogo-reason-emoji">🎓</span>Te junior / stage</button>
+    <button class="nogo-reason-btn" onclick="selectNogoReason('Buiten werkgebied')"><span class="nogo-reason-emoji">📍</span>Buiten werkgebied</button>
+    <button class="nogo-reason-btn" onclick="selectNogoReason('Dubbeling / al bekend')"><span class="nogo-reason-emoji">📋</span>Al bekend</button>
+    <button class="nogo-reason-btn full-width" onclick="selectNogoReason('Overig')"><span class="nogo-reason-emoji">💬</span>Overig</button>
+  </div>
+  <button class="nogo-back-btn" onclick="swBackFromNogo()">← Terug naar vacature</button>
+</div>
+
+<!-- Doorsturen modal -->
+<div class="modal-overlay" id="doorsturen-overlay" onclick="closeDoorsturen()"></div>
+<div class="modal-box" id="doorsturen-modal">
+  <div class="modal-title">Vacature doorsturen</div>
+  <div class="modal-sub" id="doorsturen-sub"></div>
+  <select class="modal-select" id="doorsturen-select"></select>
+  <div class="modal-actions">
+    <button class="btn-modal-cancel" onclick="closeDoorsturen()">Annuleren</button>
+    <button class="btn-modal-confirm" onclick="confirmDoorsturen()">Doorsturen</button>
+  </div>
+</div>
+
+<!-- Goedkeuren modal (Second Check) -->
+<div class="modal-overlay" id="approve-overlay" onclick="closeApprove()"></div>
+<div class="modal-box" id="approve-modal">
+  <div class="modal-title">Alsnog goedkeuren</div>
+  <div class="modal-sub" id="approve-sub"></div>
+  <select class="modal-select" id="approve-select"></select>
+  <div class="modal-actions">
+    <button class="btn-modal-cancel" onclick="closeApprove()">Annuleren</button>
+    <button class="btn-modal-confirm" onclick="confirmApprove()">Goedkeuren &amp; Toewijzen</button>
+  </div>
+</div>
+
+<!-- Desc modal -->
+<div class="desc-modal hidden" id="desc-modal">
+  <div class="desc-modal-bar">
+    <div class="desc-modal-title" id="desc-modal-title"></div>
+    <button class="desc-modal-close" onclick="closeDescModal()">✕</button>
+  </div>
+  <div class="desc-modal-body" id="desc-modal-body"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const supabase = createClient(
+  'https://ziwqshuabwcthqjspuso.supabase.co',
+  'sb_publishable_PxbxG-9ArQCsrgF9-lAM8g_-uglxVYU'
+);
+
+const NILS = 'nils.denherder@burgqhsse.nl';
+const SALES_STATUSES = ['On hold', 'Nieuwe kans', 'Gemaild', 'Lopend contact', 'Hot', 'Jobpull', 'Closed won', 'Closed loss'];
+const NOGO_REASONS = ['Verkeerde sector','Te operationeel','Intermediair / uitzendbureau','Te junior / stage','Buiten werkgebied','Dubbeling / al bekend','Overig'];
+
+let currentUser = null;
+let employees = [];
+let presenceChanged = false;
+
+// swipe state
+let swVacatures = [], swTotal = 0, swCurrent = 0, swDecisions = [], swActiveCard = null, swPendingNogoId = null;
+let swOverlayMode = false;
+
+// mijn vacatures state
+let mvJobs = [], mvActiveFilter = 'all';
+
+// second check state
+let sc2Jobs = [];
+
+// doorsturen state
+let doorstruenJobId = null;
+
+// approve state (second check)
+let approveJobId = null;
+
+const noteTimers = {};
+
+// ── Utils ──────────────────────────────────────────────
+function esc(str) {
+  return str ? str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Auth ───────────────────────────────────────────────
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) {
+  window.location.replace('./login.html');
+} else {
+  currentUser = session.user;
+  document.getElementById('auth-check').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
+  app.style.alignItems = 'center';
+  app.style.width = '100%';
+
+  const firstName = currentUser.email.split('.')[0];
+  document.getElementById('user-chip').textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+
+  if (currentUser.email === NILS) {
+    const tabBar = document.getElementById('tab-bar');
+    tabBar.innerHTML += `<button class="tab-btn" data-tab="secondcheck" onclick="switchTab('secondcheck')">Second Check <span class="tab-badge red" id="badge-sc2">0</span></button>`;
+    tabBar.innerHTML += `<button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">Analytics</button>`;
+    document.getElementById('tab-secondcheck').style.display = '';
+    document.getElementById('tab-analytics').style.display = '';
+  }
+
+  await init();
+}
+
+window.doLogout = async function() {
+  await supabase.auth.signOut();
+  window.location.replace('./login.html');
+};
+
+// ── Init ───────────────────────────────────────────────
+async function init() {
+  await loadEmployees();
+  await distributeUnassigned();
+  loadSwipe();
+  loadMijnVacatures();
+  if (currentUser.email === NILS) loadSecondCheck();
+}
+
+async function distributeUnassigned() {
+  const present = employees.filter(e => e.is_present);
+  if (present.length === 0) return;
+
+  const { data: unassigned } = await supabase.from('jobs')
+    .select('id')
+    .eq('review_status', 'pending')
+    .is('assigned_to', null);
+
+  if (!unassigned || unassigned.length === 0) return;
+
+  const groups = {};
+  present.forEach(e => groups[e.email] = []);
+  unassigned.forEach((job, i) => groups[present[i % present.length].email].push(job.id));
+
+  await Promise.all(present.map(emp =>
+    groups[emp.email].length
+      ? supabase.from('jobs').update({ assigned_to: emp.email }).in('id', groups[emp.email])
+      : Promise.resolve()
+  ));
+}
+
+// ── Employees / Presence ───────────────────────────────
+async function loadEmployees() {
+  const { data } = await supabase.from('employees').select('*').order('name');
+  employees = data || [];
+  renderPresenceBlock();
+}
+
+function renderPresenceBlock() {
+  const grid = document.getElementById('presence-grid');
+  grid.innerHTML = employees.map(emp => `
+    <label class="presence-item">
+      <input type="checkbox" data-id="${emp.id}" ${emp.is_present ? 'checked' : ''} onchange="onPresenceChange()">
+      <span class="presence-name">${esc(emp.name.split(' ')[0])}</span>
+      <span class="presence-fte">${emp.fte_hours}u</span>
+    </label>`).join('');
+  presenceChanged = false;
+  document.getElementById('presence-confirm-btn').disabled = true;
+}
+
+window.onPresenceChange = function() {
+  presenceChanged = true;
+  document.getElementById('presence-confirm-btn').disabled = false;
+};
+
+window.confirmPresence = async function() {
+  const btn = document.getElementById('presence-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = 'Bezig…';
+
+  const checkboxes = document.getElementById('presence-grid').querySelectorAll('input[type=checkbox]');
+  await Promise.all([...checkboxes].map(cb =>
+    supabase.from('employees').update({ is_present: cb.checked }).eq('id', cb.dataset.id)
+  ));
+
+  employees.forEach(emp => {
+    const cb = document.querySelector(`input[data-id="${emp.id}"]`);
+    if (cb) emp.is_present = cb.checked;
+  });
+
+  await redistributePending();
+  presenceChanged = false;
+  btn.textContent = 'Bevestig aanwezigheid';
+  showToast('Aanwezigheid bijgewerkt en verdeling herberekend.');
+  loadSwipe();
+};
+
+async function redistributePending() {
+  const present = employees.filter(e => e.is_present);
+  if (present.length === 0) return;
+
+  const { data: pending } = await supabase.from('jobs').select('id').eq('review_status', 'pending');
+  if (!pending || pending.length === 0) return;
+
+  const groups = {};
+  present.forEach(e => groups[e.email] = []);
+  pending.forEach((job, i) => groups[present[i % present.length].email].push(job.id));
+
+  await Promise.all(present.map(emp =>
+    groups[emp.email].length
+      ? supabase.from('jobs').update({ assigned_to: emp.email }).in('id', groups[emp.email])
+      : Promise.resolve()
+  ));
+}
+
+// ── Tab switching ──────────────────────────────────────
+window.switchTab = function(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    if (p.id === 'tab-' + tab) p.classList.add('active');
+    else p.classList.remove('active');
+  });
+  if (tab === 'swipen') loadSwipe();
+  if (tab === 'vacatures') loadMijnVacatures();
+  if (tab === 'secondcheck') loadSecondCheck();
+  if (tab === 'analytics') {
+    const frame = document.getElementById('analytics-frame');
+    frame.src = './dashboard.html';
+  }
+};
+
+// ── Swipe tab ──────────────────────────────────────────
+async function loadSwipe() {
+  const stack = document.getElementById('sw-stack');
+  stack.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:580px;gap:12px;color:var(--text-muted);font-size:14px"><div class="spinner"></div><span>Vacatures laden…</span></div>';
+  document.getElementById('sw-hint').style.display = 'none';
+  document.getElementById('sw-actions').style.display = 'none';
+  document.getElementById('sw-empty').style.display = 'none';
+
+  const { data, error } = await supabase.from('jobs')
+    .select('id,job_title,company_name,job_location,job_url,data_source,date_scraped,posted_at,salary,employment_type,industry,recruiter_name,recruiter_headline,recruiter_linkedin,company_website,job_description,contact_name,contact_email,contact_phone')
+    .eq('review_status', 'pending')
+    .eq('assigned_to', currentUser.email);
+
+  if (error) { stack.innerHTML = `<div style="padding:40px;color:var(--nogo);text-align:center">${esc(error.message)}</div>`; return; }
+
+  const sourceOrder = { 'linkedin': 0, 'bedrijfswebsite': 1, 'indeed': 2, 'werkzoeken.nl': 3 };
+  swVacatures = (data || []).map(mapSwipeRow).sort((a, b) => {
+    const oa = sourceOrder[a.bron] ?? 99;
+    const ob = sourceOrder[b.bron] ?? 99;
+    return oa - ob;
+  });
+  swTotal = swVacatures.length;
+  swCurrent = 0; swDecisions = [];
+  document.getElementById('badge-swipen').textContent = swTotal;
+  document.getElementById('sw-hint').style.display = '';
+  document.getElementById('sw-actions').style.display = '';
+  swRenderStack();
+}
+
+function mapSwipeRow(r) {
+  return {
+    id: r.id, bedrijf: r.company_name || '—', functie: r.job_title || '—',
+    locatie: r.job_location || '—', bron: r.data_source || null,
+    url: r.job_url || null, datumGescraped: r.date_scraped ? new Date(r.date_scraped).toLocaleDateString('nl-NL') : null,
+    postedAt: r.posted_at ? new Date(r.posted_at).toLocaleDateString('nl-NL') : null,
+    salary: r.salary || null, employment_type: r.employment_type || null, industry: r.industry || null,
+    recruiter_name: r.recruiter_name || null, recruiter_headline: r.recruiter_headline || null,
+    recruiter_linkedin: r.recruiter_linkedin || null,
+    company_website: r.company_website || null, job_description: r.job_description || null,
+    contact_name: r.contact_name || null, contact_email: r.contact_email || null, contact_phone: r.contact_phone || null,
+  };
+}
+
+window.setSwipeView = function(mode) {
+  document.getElementById('toggle-stapel').classList.toggle('active', mode === 'stapel');
+  document.getElementById('toggle-lijst').classList.toggle('active', mode === 'lijst');
+  document.getElementById('swipe-stapel-view').style.display = mode === 'stapel' ? 'flex' : 'none';
+  document.getElementById('swipe-lijst-view').style.display = mode === 'lijst' ? '' : 'none';
+  if (mode === 'lijst') renderSwipeLijst();
+};
+
+function renderSwipeLijst() {
+  const container = document.getElementById('swipe-lijst-container');
+  const remaining = swVacatures.slice(swCurrent);
+  if (remaining.length === 0) {
+    container.innerHTML = '<div class="list-empty"><span>✅</span><p>Geen openstaande vacatures.</p></div>';
+    return;
+  }
+  container.innerHTML = remaining.map((vac, i) => `
+    <div class="swipe-lijst-row" onclick="openVacFromList(${swCurrent + i})">
+      <div>
+        <div class="slr-title">${esc(vac.functie)}</div>
+        <div class="slr-company">${esc(vac.bedrijf)}</div>
+        <div class="slr-meta">
+          <span class="slr-chip">📍 ${esc(vac.locatie)}</span>
+          ${vac.postedAt ? `<span class="slr-chip">📅 ${vac.postedAt}</span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        ${vac.bron ? `<span class="slr-source">${esc(vac.bron)}</span>` : ''}
+        <span class="slr-arrow">›</span>
+      </div>
+    </div>`).join('');
+}
+
+window.openVacFromList = function(idx) {
+  if (idx !== swCurrent) {
+    const tmp = swVacatures[swCurrent];
+    swVacatures[swCurrent] = swVacatures[idx];
+    swVacatures[idx] = tmp;
+  }
+  swOverlayMode = true;
+  const ovStack = document.getElementById('ov-stack');
+  ovStack.innerHTML = '';
+  const card = swBuildCard(swVacatures[swCurrent], 1, '');
+  card.classList.add('in-overlay');
+  ovStack.appendChild(card);
+  swActiveCard = card;
+  swSetupDrag(card);
+  document.getElementById('card-overlay').classList.add('open');
+};
+
+window.closeCardOverlay = function() {
+  swOverlayMode = false;
+  document.getElementById('card-overlay').classList.remove('open');
+  document.getElementById('ov-stack').innerHTML = '';
+};
+
+function swRenderStack() {
+  const stack = document.getElementById('sw-stack');
+  stack.innerHTML = '';
+  if (swCurrent >= swTotal) {
+    stack.style.display = 'none';
+    document.getElementById('sw-empty').style.display = 'flex';
+    document.getElementById('sw-hint').style.display = 'none';
+    document.getElementById('sw-actions').style.display = 'none';
+    return;
+  }
+  stack.style.display = '';
+  for (let i = Math.min(swCurrent + 2, swTotal - 1); i >= swCurrent; i--) {
+    const offset = i - swCurrent;
+    const cls = offset === 0 ? '' : offset === 1 ? 'behind-1' : 'behind-2';
+    const card = swBuildCard(swVacatures[i], 10 - offset, cls);
+    stack.appendChild(card);
+    if (offset === 0) { swActiveCard = card; swSetupDrag(card); }
+  }
+  swUpdateStats();
+  swUpdateUndoBtn();
+}
+
+function swBuildCard(vac, zIndex, cls) {
+  const div = document.createElement('div');
+  div.className = 'swipe-card ' + cls;
+  div.style.zIndex = zIndex;
+
+  const badges = [
+    vac.employment_type ? `<span class="sc-badge sc-badge-type">${esc(vac.employment_type)}</span>` : '',
+    vac.industry ? `<span class="sc-badge sc-badge-industry">${esc(vac.industry)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const meta = [
+    `<div class="sc-meta-item"><span class="sc-meta-label">📍 Locatie</span><span class="sc-meta-value">${esc(vac.locatie)}</span></div>`,
+    vac.salary ? `<div class="sc-meta-item"><span class="sc-meta-label">💶 Salaris</span><span class="sc-meta-value" style="color:var(--go)">${esc(vac.salary)}</span></div>` : '',
+    vac.bron ? `<div class="sc-meta-item"><span class="sc-meta-label">🔍 Bron</span><span class="sc-meta-value">${esc(vac.bron)}</span></div>` : '',
+    vac.datumGescraped ? `<div class="sc-meta-item"><span class="sc-meta-label">📅 Gevonden</span><span class="sc-meta-value">${esc(vac.datumGescraped)}</span></div>` : '',
+  ].filter(Boolean).join('');
+
+  const desc = vac.job_description ? `<div class="sc-desc-wrap"><div class="sc-desc">${esc(vac.job_description)}</div><button class="sc-read-more" onclick="event.stopPropagation();toggleSwipeDesc(this)">Lees meer ↓</button></div>` : '';
+  let recruiterInner = '';
+  if (vac.recruiter_name) {
+    const liLink = vac.recruiter_linkedin ? ` <a class="li-badge" href="${esc(vac.recruiter_linkedin)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">in</a>` : '';
+    recruiterInner += `<div class="sc-recruiter-label">Geplaatst door</div><div class="sc-recruiter-name">${esc(vac.recruiter_name)}${liLink}</div>`;
+  } else if (vac.contact_name) {
+    recruiterInner += `<div class="sc-recruiter-label">Contact</div><div class="sc-recruiter-name">${esc(vac.contact_name)}</div>`;
+  }
+  const contactLinks = [
+    vac.contact_email ? `<a class="sc-link" href="mailto:${esc(vac.contact_email)}" onclick="event.stopPropagation()">✉ ${esc(vac.contact_email)}</a>` : '',
+    vac.contact_phone ? `<a class="sc-link" href="tel:${esc(vac.contact_phone)}" onclick="event.stopPropagation()">📞 ${esc(vac.contact_phone)}</a>` : '',
+  ].filter(Boolean).join('');
+  if (contactLinks) recruiterInner += `<div class="sc-footer" style="margin-top:6px">${contactLinks}</div>`;
+  const recruiter = recruiterInner ? `<div class="sc-recruiter">${recruiterInner}</div>` : '<div style="margin-top:auto"></div>';
+  const links = [
+    vac.url ? `<a class="sc-link" href="${esc(vac.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Vacature</a>` : '',
+    vac.company_website ? `<a class="sc-link" href="${esc(vac.company_website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🌐 Website</a>` : '',
+  ].filter(Boolean).join('');
+
+  div.innerHTML = `
+    <div class="stamp go">GO</div><div class="stamp nogo">NO GO</div>
+    <div class="sc-company">${esc(vac.bedrijf)}</div>
+    <div class="sc-role">${esc(vac.functie)}</div>
+    ${badges ? `<div class="sc-badges">${badges}</div>` : ''}
+    <div class="sc-divider"></div>
+    <div class="sc-meta">${meta}</div>
+    ${desc}
+    ${recruiter}
+    ${links ? `<div class="sc-footer">${links}</div>` : ''}`;
+  return div;
+}
+
+function swUpdateStats() {
+  document.getElementById('sw-go').textContent = swDecisions.filter(d => d.action === 'go').length;
+  document.getElementById('sw-nogo').textContent = swDecisions.filter(d => d.action === 'nogo').length;
+  document.getElementById('sw-left').textContent = swTotal - swCurrent;
+  document.getElementById('sw-progress').style.width = swTotal ? (swCurrent / swTotal * 100) + '%' : '0%';
+  document.getElementById('badge-swipen').textContent = swTotal - swCurrent;
+}
+
+function swUpdateUndoBtn() {
+  document.getElementById('sw-undo-btn').disabled = swDecisions.length === 0;
+}
+
+window.swDoAction = async function(action) {
+  if (swCurrent >= swTotal || !swActiveCard) return;
+  const vac = swVacatures[swCurrent];
+
+  if (action === 'skip') {
+    swActiveCard.classList.add('fly-up');
+    swVacatures.splice(swCurrent, 1);
+    swVacatures.push(vac);
+    setTimeout(() => {
+      if (swOverlayMode) { window.closeCardOverlay(); renderSwipeLijst(); }
+      else swRenderStack();
+      document.getElementById('badge-swipen').textContent = swTotal - swCurrent;
+    }, 320);
+    return;
+  }
+
+  swDecisions.push({ vac, action });
+  swUpdateUndoBtn();
+
+  const animClass = action === 'go' ? 'fly-right' : 'fly-left';
+  swActiveCard.classList.add(animClass);
+  if (action === 'go') { const s = swActiveCard.querySelector('.stamp.go'); if (s) s.style.opacity = '1'; }
+  if (action === 'nogo') { const s = swActiveCard.querySelector('.stamp.nogo'); if (s) s.style.opacity = '1'; }
+
+  if (action === 'nogo') {
+    await supabase.from('jobs').update({ review_status: 'nogo', reviewed_at: new Date().toISOString() }).eq('id', vac.id);
+    setTimeout(() => {
+      swCurrent++;
+      document.getElementById('badge-swipen').textContent = swTotal - swCurrent;
+      if (swOverlayMode) window.closeCardOverlay();
+      showNogoPopup(vac);
+    }, 320);
+  } else {
+    setTimeout(async () => {
+      swCurrent++;
+      document.getElementById('badge-swipen').textContent = swTotal - swCurrent;
+      if (swOverlayMode) {
+        window.closeCardOverlay();
+        renderSwipeLijst();
+      } else {
+        swRenderStack();
+      }
+      await assignGoVacature(vac.id, vac.job_description || '');
+      loadMijnVacaturesBackground();
+    }, 320);
+  }
+};
+
+window.swUndo = async function() {
+  if (swDecisions.length === 0) return;
+  const last = swDecisions.pop();
+  swCurrent--;
+  if (last.action === 'nogo') {
+    await supabase.from('jobs').update({ review_status: 'pending', reviewed_at: null, nogo_reason: null }).eq('id', last.vac.id);
+  } else if (last.action === 'go') {
+    await supabase.from('jobs').update({ review_status: 'pending', assigned_to: currentUser.email, seniority_level: null, seniority_reviewed_at: null }).eq('id', last.vac.id);
+  }
+  swRenderStack();
+};
+
+function swSetupDrag(card) {
+  let startX, startY, dragging = false;
+  const onStart = e => { if (card.classList.contains('desc-expanded')) return; dragging = true; const pt = e.touches ? e.touches[0] : e; startX = pt.clientX; startY = pt.clientY; card.style.transition = 'none'; };
+  const onMove = e => {
+    if (!dragging) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - startX, dy = pt.clientY - startY;
+    card.style.transform = `translateX(${dx}px) translateY(${dy * 0.3}px) rotate(${dx * 0.08}deg)`;
+    const sg = card.querySelector('.stamp.go'), sn = card.querySelector('.stamp.nogo');
+    if (sg) sg.style.opacity = dx > 30 ? Math.min((dx - 30) / 80, 1) : 0;
+    if (sn) sn.style.opacity = dx < -30 ? Math.min((-dx - 30) / 80, 1) : 0;
+  };
+  const onEnd = e => {
+    if (!dragging) return; dragging = false;
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const dx = pt.clientX - startX;
+    card.style.transition = '';
+    if (dx > 80) window.swDoAction('go');
+    else if (dx < -80) window.swDoAction('nogo');
+    else { card.style.transform = ''; card.querySelectorAll('.stamp').forEach(s => s.style.opacity = 0); }
+  };
+  card.addEventListener('mousedown', onStart);
+  card.addEventListener('touchstart', onStart, { passive: true });
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('mouseup', onEnd);
+  window.addEventListener('touchend', onEnd);
+}
+
+// ── No-go popup ────────────────────────────────────────
+function showNogoPopup(vac) {
+  swPendingNogoId = vac.id;
+  document.getElementById('nogo-popup-title').textContent = vac.functie;
+  document.getElementById('nogo-popup-company').textContent = vac.bedrijf;
+  document.getElementById('nogo-overlay').classList.add('open');
+  document.getElementById('nogo-popup').classList.add('open');
+}
+
+window.selectNogoReason = async function(reason) {
+  if (swPendingNogoId) await supabase.from('jobs').update({ nogo_reason: reason }).eq('id', swPendingNogoId);
+  closeNogoPopup();
+};
+
+window.closeNogoPopup = function() {
+  document.getElementById('nogo-overlay').classList.remove('open');
+  document.getElementById('nogo-popup').classList.remove('open');
+  swPendingNogoId = null;
+  swRenderStack();
+  renderSwipeLijst();
+};
+
+window.swBackFromNogo = async function() {
+  document.getElementById('nogo-overlay').classList.remove('open');
+  document.getElementById('nogo-popup').classList.remove('open');
+  swPendingNogoId = null;
+  await window.swUndo();
+};
+
+// ── GO assignment ──────────────────────────────────────
+function determineSeniority(_description) {
+  return 'medior';
+}
+
+async function assignGoVacature(jobId, description) {
+  const seniority = determineSeniority(description);
+  const now = new Date().toISOString();
+
+  // Determine assignee before writing to DB
+  const present = employees.filter(e => e.is_present);
+  let chosenEmail = currentUser.email;
+
+  if (present.length > 0) {
+    const { data: goJobs } = await supabase.from('jobs')
+      .select('assigned_to')
+      .eq('review_status', 'go')
+      .in('assigned_to', present.map(e => e.email));
+
+    const goCounts = {};
+    present.forEach(e => goCounts[e.email] = 0);
+    (goJobs || []).forEach(j => { if (j.assigned_to in goCounts) goCounts[j.assigned_to]++; });
+
+    const weighted = emp => goCounts[emp.email] / emp.fte_hours;
+    let candidates = present.filter(e => e.seniority_levels && e.seniority_levels.includes(seniority));
+    if (candidates.length === 0) candidates = present;
+    chosenEmail = candidates.reduce((best, emp) => weighted(emp) < weighted(best) ? emp : best).email;
+  }
+
+  // Single atomic write: review_status + assigned_to + seniority in one update
+  const { error } = await supabase.from('jobs')
+    .update({
+      review_status: 'go',
+      assigned_to: chosenEmail,
+      seniority_level: seniority,
+      seniority_reviewed_at: now,
+      reviewed_at: now,
+    })
+    .eq('id', jobId);
+
+  if (error) {
+    showToast('Fout bij opslaan GO: ' + error.message);
+    console.error('assignGoVacature error:', error);
+    return;
+  }
+
+  try {
+    await fetch('https://mvl1009.app.n8n.cloud/webhook/d9c398f5-d635-4fd2-b4ce-231b3bc087fe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id: jobId }),
+    });
+  } catch (e) {
+    console.warn('Webhook mislukt:', e);
+  }
+}
+
+// ── Mijn Vacatures tab ─────────────────────────────────
+async function loadMijnVacatures() {
+  const container = document.getElementById('mv-list');
+  container.innerHTML = '<div class="list-loading"><div class="spinner"></div><span>Vacatures laden…</span></div>';
+  document.getElementById('mv-summary').innerHTML = '';
+
+  const { data, error } = await supabase.from('jobs')
+    .select('id, job_title, company_name, job_location, job_url, data_source, date_scraped, reviewed_at, enriched_at, company_website, company_phone, company_industry, company_linkedin, recruiter_name, recruiter_linkedin, recruiter_headline, company_address, salary, employment_type, industry, posted_at, contact_email, contact_phone, sales_status, sales_notes')
+    .eq('review_status', 'go')
+    .eq('assigned_to', currentUser.email)
+    .order('reviewed_at', { ascending: false });
+
+  if (error) { container.innerHTML = `<div class="list-empty"><span>⚠️</span><p>${esc(error.message)}</p></div>`; return; }
+
+  mvJobs = data || [];
+  mvActiveFilter = 'all';
+  renderMvSummary();
+  renderMijnVacatures();
+}
+
+async function loadMijnVacaturesBackground() {
+  const { data, error } = await supabase.from('jobs')
+    .select('id, job_title, company_name, job_location, job_url, data_source, date_scraped, reviewed_at, enriched_at, company_website, company_phone, company_industry, company_linkedin, recruiter_name, recruiter_linkedin, recruiter_headline, company_address, salary, employment_type, industry, posted_at, contact_email, contact_phone, sales_status, sales_notes')
+    .eq('review_status', 'go')
+    .eq('assigned_to', currentUser.email)
+    .order('reviewed_at', { ascending: false });
+  if (error || !data) return;
+  mvJobs = data;
+  if (document.getElementById('tab-vacatures').classList.contains('active')) {
+    renderMvSummary();
+    renderMijnVacatures();
+  }
+}
+
+function getMvStatus(job) { return job.sales_status || 'Nieuwe kans'; }
+
+function renderMvSummary() {
+  const counts = {};
+  mvJobs.forEach(j => { const s = getMvStatus(j); counts[s] = (counts[s] || 0) + 1; });
+  let html = `<button class="summary-chip ${mvActiveFilter === 'all' ? 'active' : ''}" onclick="setMvFilter('all')">Alle <span class="chip-count">${mvJobs.length}</span></button>`;
+  SALES_STATUSES.forEach(s => {
+    if (counts[s]) html += `<button class="summary-chip ${mvActiveFilter === s ? 'active' : ''}" onclick="setMvFilter('${s}')">${s} <span class="chip-count">${counts[s]}</span></button>`;
+  });
+  document.getElementById('mv-summary').innerHTML = html;
+}
+
+function renderMijnVacatures() {
+  const container = document.getElementById('mv-list');
+  const filtered = mvActiveFilter === 'all' ? mvJobs : mvJobs.filter(j => getMvStatus(j) === mvActiveFilter);
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="list-empty"><span>📭</span><p>Geen vacatures in dit filter.</p></div>';
+    return;
+  }
+  container.innerHTML = '';
+  filtered.forEach(job => container.appendChild(buildMvCard(job)));
+}
+
+window.setMvFilter = function(filter) {
+  mvActiveFilter = filter;
+  renderMvSummary();
+  renderMijnVacatures();
+};
+
+function buildMvCard(job) {
+  const card = document.createElement('div');
+  card.className = 'vacancy-card';
+  card.dataset.id = job.id;
+
+  const postedStr = job.posted_at ? new Date(job.posted_at).toLocaleDateString('nl-NL') : null;
+  const dateStr = job.date_scraped
+    ? new Date(job.date_scraped).toLocaleDateString('nl-NL')
+    : job.reviewed_at ? new Date(job.reviewed_at).toLocaleDateString('nl-NL') : null;
+
+  const metaChips = [
+    job.job_location ? `<span class="meta-chip">📍 ${esc(job.job_location)}</span>` : '',
+    job.data_source  ? `<span class="meta-chip">🔍 ${esc(job.data_source)}</span>` : '',
+    postedStr ? `<span class="meta-chip">📅 Geplaatst op: ${postedStr}</span>` : (dateStr ? `<span class="meta-chip">📅 ${dateStr}</span>` : ''),
+    job.job_url ? `<span class="meta-chip">↗ <a href="${esc(job.job_url)}" target="_blank" rel="noopener">Bekijk vacature</a></span>` : '',
+  ].filter(Boolean).join('');
+
+  const infoBadgesHtml = [
+    job.salary          ? `<span class="info-badge info-badge-salary">💶 ${esc(job.salary)}</span>` : '',
+    job.employment_type ? `<span class="info-badge info-badge-type">${esc(job.employment_type)}</span>` : '',
+    job.industry        ? `<span class="info-badge info-badge-industry">${esc(job.industry)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const companyLiHtml = job.company_linkedin
+    ? ` <a class="li-badge" href="${esc(job.company_linkedin)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">in</a>`
+    : '';
+
+  const recruiterBlock = job.recruiter_name ? `
+    <div class="contact-block">
+      <div class="contact-block-label">Contactpersoon</div>
+      <div class="contact-person-name">${esc(job.recruiter_name)}${job.recruiter_linkedin ? ` <a class="li-badge" href="${esc(job.recruiter_linkedin)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">in</a>` : ''}</div>
+      ${job.recruiter_headline ? `<div class="contact-person-headline">${esc(job.recruiter_headline)}</div>` : ''}
+    </div>` : '';
+
+  const hasCompanyContact = job.company_website || job.company_address;
+  const companyBlock = hasCompanyContact ? `
+    <div class="contact-block">
+      <div class="contact-block-label">Bedrijf</div>
+      ${job.company_website ? `<a class="contact-link" href="${esc(job.company_website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🌐 ${esc(job.company_website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : ''}
+      ${job.company_address ? `<div class="contact-address">📍 ${esc(job.company_address)}</div>` : ''}
+    </div>` : '';
+
+  const apolloBlock = `
+    <div class="contact-block">
+      <div class="contact-block-label">Contact <span class="apollo-tag">Apollo</span></div>
+      ${job.contact_email
+        ? `<a class="contact-link" href="mailto:${esc(job.contact_email)}" onclick="event.stopPropagation()">✉ ${esc(job.contact_email)}</a>`
+        : `<span class="apollo-placeholder">✉ nog niet verrijkt</span>`}
+      ${job.contact_phone
+        ? `<a class="contact-link" href="tel:${esc(job.contact_phone)}" onclick="event.stopPropagation()">📞 ${esc(job.contact_phone)}</a>`
+        : `<span class="apollo-placeholder">📞 nog niet verrijkt</span>`}
+    </div>`;
+
+  const contactSectionHtml = `
+    <div class="contact-section">
+      <div class="contact-section-title">Contactinformatie</div>
+      <div class="contact-grid">
+        ${recruiterBlock}
+        ${companyBlock}
+        ${apolloBlock}
+      </div>
+    </div>`;
+
+  let enrichHtml;
+  if (job.enriched_at) {
+    const chips = [
+      job.company_industry ? `<span class="enrich-chip">🏭 ${esc(job.company_industry)}</span>` : '',
+      job.company_phone    ? `<span class="enrich-chip">📞 ${esc(job.company_phone)}</span>` : '',
+    ].filter(Boolean).join('');
+    enrichHtml = `<div class="enrich-section"><span class="badge-enriched">✓ Enriched</span>${chips ? `<div class="enrich-details">${chips}</div>` : ''}</div>`;
+  } else if (job.recruiter_linkedin) {
+    enrichHtml = `<div class="enrich-section"><span class="badge-not-enriched">⏳ Wacht op Apollo enrichment</span></div>`;
+  } else {
+    enrichHtml = `<div class="enrich-section"><span class="badge-no-apollo">— Geen Apollo beschikbaar</span></div>`;
+  }
+
+  const currentStatus = getMvStatus(job);
+  const statusButtons = SALES_STATUSES.map(s =>
+    `<button class="status-btn${currentStatus === s ? ' active' : ''}" data-status="${esc(s)}" onclick="updateSalesStatus('${job.id}', '${esc(s)}')">${esc(s)}</button>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div>
+        <div class="card-title">${esc(job.job_title) || '—'}</div>
+        <div class="card-company">${esc(job.company_name) || '—'}${companyLiHtml}</div>
+      </div>
+      <span class="status-badge-go">Go</span>
+    </div>
+    <div class="card-meta">${metaChips}</div>
+    ${infoBadgesHtml ? `<div class="info-badges">${infoBadgesHtml}</div>` : ''}
+    ${contactSectionHtml}
+    ${enrichHtml}
+    <div class="sales-section">
+      <div class="sales-section-title">Sales opvolging</div>
+      <div class="sales-field">
+        <div class="sales-label">Status</div>
+        <div class="status-btn-group" id="status-grp-${job.id}">${statusButtons}</div>
+      </div>
+      <div class="sales-field">
+        <div class="sales-label">Notities</div>
+        <textarea class="sales-notes-textarea" id="notes-${job.id}" placeholder="Voeg notities toe…" oninput="scheduleNotesSave('${job.id}', this.value)">${esc(job.sales_notes || '')}</textarea>
+        <div class="saving-indicator" id="notes-ind-${job.id}"></div>
+      </div>
+    </div>
+    <div class="pipeline-actions">
+      <button class="btn-doorsturen" onclick="openDoorsturen('${job.id}','${esc(job.job_title)}','${esc(job.company_name)}')">Doorsturen →</button>
+    </div>`;
+
+  return card;
+}
+
+// ── Second Check vcard builder ─────────────────────────
+function buildVcard(job, mode) {
+  const card = document.createElement('div');
+  card.className = 'sc2-card';
+  card.id = `vcard-${job.id}`;
+
+  const metaItems = [
+    job.job_location ? `<span class="meta-chip">📍 ${esc(job.job_location)}</span>` : '',
+    job.data_source ? `<span class="meta-chip">🔍 ${esc(job.data_source)}</span>` : '',
+    job.salary ? `<span class="meta-chip" style="color:var(--go)">💶 ${esc(job.salary)}</span>` : '',
+    job.job_url ? `<span class="meta-chip"><a href="${esc(job.job_url)}" target="_blank" rel="noopener">↗ Bekijk</a></span>` : '',
+    job.company_website ? `<span class="meta-chip"><a href="${esc(job.company_website)}" target="_blank" rel="noopener">🌐 Website</a></span>` : '',
+  ].filter(Boolean).join('');
+
+  const daysLeft = job.reviewed_at ? 14 - Math.floor((Date.now() - new Date(job.reviewed_at)) / 86400000) : null;
+  const cdClass = daysLeft === null ? 'normal' : daysLeft <= 3 ? 'urgent' : daysLeft <= 7 ? 'normal' : 'fine';
+  const cdText = daysLeft !== null ? `${daysLeft} dag${daysLeft !== 1 ? 'en' : ''} resterend` : 'Onbekend';
+  const reasonOptions = NOGO_REASONS.map(r => `<option value="${esc(r)}" ${job.nogo_reason === r ? 'selected' : ''}>${esc(r)}</option>`).join('');
+
+  card.innerHTML = `
+    <div class="vcard-header">
+      <div><div class="vcard-title">${esc(job.job_title) || '—'}</div><div class="vcard-company">${esc(job.company_name) || '—'}</div></div>
+      <span class="sc2-countdown ${cdClass}">${cdText}</span>
+    </div>
+    <div class="vcard-meta">${metaItems}</div>
+    <div class="sc2-details">
+      <div><div class="sc2-detail-label">No-go reden</div>
+        <select class="sc2-nogo-reason" onchange="updateNogoReason('${job.id}', this.value)">
+          <option value="">— geen reden —</option>
+          ${reasonOptions}
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn-approve" onclick="openApprove('${job.id}','${esc(job.job_title)}','${esc(job.company_name)}')">Alsnog goedkeuren</button>
+      </div>
+    </div>
+    ${job.job_description ? `<div><button class="sc2-desc-toggle" onclick="toggleSc2Desc(this)">Vacaturetekst lezen ↓</button><div class="sc2-desc-body">${esc(job.job_description)}</div></div>` : ''}`;
+  return card;
+}
+
+// ── Sales status + notes ───────────────────────────────
+window.updateSalesStatus = async function(id, status) {
+  const grp = document.getElementById('status-grp-' + id);
+  if (grp) grp.querySelectorAll('.status-btn').forEach(b => b.classList.toggle('active', b.dataset.status === status));
+
+  const job = mvJobs.find(j => j.id === id);
+  if (job) job.sales_status = status;
+
+  await supabase.from('jobs').update({ sales_status: status }).eq('id', id);
+  renderMvSummary();
+  showToast('Status opgeslagen.');
+};
+
+window.scheduleNotesSave = function(id, value) {
+  const job = mvJobs.find(j => j.id === id);
+  if (job) job.sales_notes = value;
+  const ind = document.getElementById('notes-ind-' + id);
+  if (ind) { ind.textContent = 'Opslaan…'; ind.className = 'saving-indicator active'; }
+  clearTimeout(noteTimers[id]);
+  noteTimers[id] = setTimeout(async () => {
+    await supabase.from('jobs').update({ sales_notes: value }).eq('id', id);
+    if (ind) { ind.textContent = 'Opgeslagen'; ind.className = 'saving-indicator saved'; setTimeout(() => { ind.textContent = ''; ind.className = 'saving-indicator'; }, 2000); }
+  }, 1000);
+};
+
+// ── Doorsturen modal ───────────────────────────────────
+window.openDoorsturen = function(jobId, title, company) {
+  doorstruenJobId = jobId;
+  document.getElementById('doorsturen-sub').textContent = `${title} — ${company}`;
+  const sel = document.getElementById('doorsturen-select');
+  sel.innerHTML = employees.map(e => e.email !== currentUser.email ? `<option value="${esc(e.email)}">${esc(e.name)}</option>` : '').join('');
+  document.getElementById('doorsturen-overlay').classList.add('open');
+  document.getElementById('doorsturen-modal').classList.add('open');
+};
+
+window.closeDoorsturen = function() {
+  document.getElementById('doorsturen-overlay').classList.remove('open');
+  document.getElementById('doorsturen-modal').classList.remove('open');
+  doorstruenJobId = null;
+};
+
+window.confirmDoorsturen = async function() {
+  const toEmail = document.getElementById('doorsturen-select').value;
+  if (!doorstruenJobId || !toEmail) return;
+  await supabase.from('jobs').update({ assigned_to: toEmail }).eq('id', doorstruenJobId);
+  const removedId = doorstruenJobId;
+  closeDoorsturen();
+  showToast('Vacature doorgestuurd.');
+  mvJobs = mvJobs.filter(j => j.id !== removedId);
+  document.querySelector(`.vacancy-card[data-id="${removedId}"]`)?.remove();
+  renderMvSummary();
+  const filtered = mvActiveFilter === 'all' ? mvJobs : mvJobs.filter(j => getMvStatus(j) === mvActiveFilter);
+  if (filtered.length === 0) document.getElementById('mv-list').innerHTML = '<div class="list-empty"><span>📭</span><p>Geen vacatures in dit filter.</p></div>';
+};
+
+// ── Second Check tab ───────────────────────────────────
+async function loadSecondCheck() {
+  const container = document.getElementById('sc2-list');
+  container.innerHTML = '<div class="list-loading"><div class="spinner"></div><span>Laden…</span></div>';
+
+  const cutoff = new Date(Date.now() - 14 * 86400000).toISOString();
+  const { data, error } = await supabase.from('jobs')
+    .select('id,job_title,company_name,job_location,job_url,data_source,salary,reviewed_at,nogo_reason,company_website,job_description')
+    .eq('review_status', 'nogo')
+    .gte('reviewed_at', cutoff)
+    .order('reviewed_at', { ascending: false });
+
+  if (error) { container.innerHTML = `<div class="list-empty"><span>⚠️</span><p>${esc(error.message)}</p></div>`; return; }
+
+  sc2Jobs = data || [];
+  const badge = document.getElementById('badge-sc2');
+  if (badge) badge.textContent = sc2Jobs.length;
+
+  if (sc2Jobs.length === 0) {
+    container.innerHTML = '<div class="list-empty"><span>✅</span><p>Geen recente no-go vacatures.</p></div>';
+    return;
+  }
+  container.innerHTML = '';
+  sc2Jobs.forEach(job => container.appendChild(buildVcard(job, 'sc2')));
+}
+
+window.updateNogoReason = async function(id, reason) {
+  await supabase.from('jobs').update({ nogo_reason: reason || null }).eq('id', id);
+  showToast('No-go reden bijgewerkt.');
+};
+
+window.openApprove = function(jobId, title, company) {
+  approveJobId = jobId;
+  document.getElementById('approve-sub').textContent = `${title} — ${company}`;
+  const sel = document.getElementById('approve-select');
+  sel.innerHTML = employees.map(e => `<option value="${esc(e.email)}">${esc(e.name)}</option>`).join('');
+  document.getElementById('approve-overlay').classList.add('open');
+  document.getElementById('approve-modal').classList.add('open');
+};
+
+window.closeApprove = function() {
+  document.getElementById('approve-overlay').classList.remove('open');
+  document.getElementById('approve-modal').classList.remove('open');
+  approveJobId = null;
+};
+
+window.confirmApprove = async function() {
+  const toEmail = document.getElementById('approve-select').value;
+  if (!approveJobId || !toEmail) return;
+  await supabase.from('jobs').update({ review_status: 'go', assigned_to: toEmail }).eq('id', approveJobId);
+  closeApprove();
+  showToast('Vacature goedgekeurd en toegewezen.');
+  sc2Jobs = sc2Jobs.filter(j => j.id !== approveJobId);
+  document.getElementById('sc2-list').querySelector(`#vcard-${approveJobId}`)?.remove();
+  const badge = document.getElementById('badge-sc2');
+  if (badge) badge.textContent = sc2Jobs.length;
+  if (sc2Jobs.length === 0) document.getElementById('sc2-list').innerHTML = '<div class="list-empty"><span>✅</span><p>Geen recente no-go vacatures.</p></div>';
+};
+
+// ── Desc modal ─────────────────────────────────────────
+window.toggleSwipeDesc = function(btn) {
+  const descEl = btn.previousElementSibling;
+  const expanded = descEl.classList.toggle('expanded');
+  btn.textContent = expanded ? 'Lees minder ↑' : 'Lees meer ↓';
+  if (!swOverlayMode) {
+    const card = btn.closest('.swipe-card');
+    card.classList.toggle('desc-expanded', expanded);
+    card.style.touchAction = expanded ? 'pan-y' : '';
+  }
+};
+
+window.openDescModal = function(title, desc) {
+  document.getElementById('desc-modal-title').textContent = title;
+  document.getElementById('desc-modal-body').textContent = desc;
+  document.getElementById('desc-modal').classList.remove('hidden');
+};
+window.closeDescModal = function() { document.getElementById('desc-modal').classList.add('hidden'); };
+
+window.toggleSc2Desc = function(btn) {
+  const body = btn.nextElementSibling;
+  const open = body.classList.toggle('open');
+  btn.textContent = open ? 'Vacaturetekst verbergen ↑' : 'Vacaturetekst lezen ↓';
+};
+
+</script>
+</body>
+</html>
