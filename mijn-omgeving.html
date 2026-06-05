@@ -597,7 +597,7 @@ async function loadSwipe() {
   document.getElementById('sw-empty').style.display = 'none';
 
   const { data, error } = await supabase.from('jobs')
-    .select('id,job_title,company_name,job_location,job_url,data_source,date_scraped,posted_at,salary,employment_type,industry,recruiter_name,recruiter_headline,company_website,job_description')
+    .select('id,job_title,company_name,job_location,job_url,data_source,date_scraped,posted_at,salary,employment_type,industry,recruiter_name,recruiter_headline,recruiter_linkedin,company_website,job_description,contact_name,contact_email,contact_phone')
     .eq('review_status', 'pending')
     .eq('assigned_to', currentUser.email);
 
@@ -625,7 +625,9 @@ function mapSwipeRow(r) {
     postedAt: r.posted_at ? new Date(r.posted_at).toLocaleDateString('nl-NL') : null,
     salary: r.salary || null, employment_type: r.employment_type || null, industry: r.industry || null,
     recruiter_name: r.recruiter_name || null, recruiter_headline: r.recruiter_headline || null,
+    recruiter_linkedin: r.recruiter_linkedin || null,
     company_website: r.company_website || null, job_description: r.job_description || null,
+    contact_name: r.contact_name || null, contact_email: r.contact_email || null, contact_phone: r.contact_phone || null,
   };
 }
 
@@ -724,7 +726,19 @@ function swBuildCard(vac, zIndex, cls) {
   ].filter(Boolean).join('');
 
   const desc = vac.job_description ? `<div class="sc-desc-wrap"><div class="sc-desc">${esc(vac.job_description)}</div><button class="sc-read-more" onclick="event.stopPropagation();toggleSwipeDesc(this)">Lees meer ↓</button></div>` : '';
-  const recruiter = vac.recruiter_name ? `<div class="sc-recruiter"><div class="sc-recruiter-label">Geplaatst door</div><div class="sc-recruiter-name">${esc(vac.recruiter_name)}</div></div>` : '<div style="margin-top:auto"></div>';
+  let recruiterInner = '';
+  if (vac.recruiter_name) {
+    const liLink = vac.recruiter_linkedin ? ` <a class="li-badge" href="${esc(vac.recruiter_linkedin)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">in</a>` : '';
+    recruiterInner += `<div class="sc-recruiter-label">Geplaatst door</div><div class="sc-recruiter-name">${esc(vac.recruiter_name)}${liLink}</div>`;
+  } else if (vac.contact_name) {
+    recruiterInner += `<div class="sc-recruiter-label">Contact</div><div class="sc-recruiter-name">${esc(vac.contact_name)}</div>`;
+  }
+  const contactLinks = [
+    vac.contact_email ? `<a class="sc-link" href="mailto:${esc(vac.contact_email)}" onclick="event.stopPropagation()">✉ ${esc(vac.contact_email)}</a>` : '',
+    vac.contact_phone ? `<a class="sc-link" href="tel:${esc(vac.contact_phone)}" onclick="event.stopPropagation()">📞 ${esc(vac.contact_phone)}</a>` : '',
+  ].filter(Boolean).join('');
+  if (contactLinks) recruiterInner += `<div class="sc-footer" style="margin-top:6px">${contactLinks}</div>`;
+  const recruiter = recruiterInner ? `<div class="sc-recruiter">${recruiterInner}</div>` : '<div style="margin-top:auto"></div>';
   const links = [
     vac.url ? `<a class="sc-link" href="${esc(vac.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Vacature</a>` : '',
     vac.company_website ? `<a class="sc-link" href="${esc(vac.company_website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🌐 Website</a>` : '',
@@ -817,7 +831,7 @@ window.swUndo = async function() {
 
 function swSetupDrag(card) {
   let startX, startY, dragging = false;
-  const onStart = e => { dragging = true; const pt = e.touches ? e.touches[0] : e; startX = pt.clientX; startY = pt.clientY; card.style.transition = 'none'; };
+  const onStart = e => { if (card.classList.contains('desc-expanded')) return; dragging = true; const pt = e.touches ? e.touches[0] : e; startX = pt.clientX; startY = pt.clientY; card.style.transition = 'none'; };
   const onMove = e => {
     if (!dragging) return;
     e.preventDefault();
@@ -1266,7 +1280,9 @@ window.toggleSwipeDesc = function(btn) {
   const expanded = descEl.classList.toggle('expanded');
   btn.textContent = expanded ? 'Lees minder ↑' : 'Lees meer ↓';
   if (!swOverlayMode) {
-    btn.closest('.swipe-card').classList.toggle('desc-expanded', expanded);
+    const card = btn.closest('.swipe-card');
+    card.classList.toggle('desc-expanded', expanded);
+    card.style.touchAction = expanded ? 'pan-y' : '';
   }
 };
 

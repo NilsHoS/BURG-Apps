@@ -9,7 +9,7 @@ Lokale repo: C:\Users\MaxvanLeeuwenBURGBed\BURG-Apps
 - **Frontend**: GitHub Pages (HTML/CSS/JS)
 - **Database**: Supabase (project: burg-jobs, id: ziwqshuabwcthqjspuso, regio: eu-west-1)
 - **Automatisering**: n8n (mvl1009.app.n8n.cloud)
-- **Scraping**: Apify (LinkedIn, Indeed, Werkzoeken.nl, bedrijfswebsites)
+- **Scraping**: Thunderbit (LinkedIn, Indeed) via Google Sheets → n8n
 - **Branch workflow**: Max werkt op `feature/database-koppeling`, Nils reviewt en merget via PR
 
 ## Pagina's in de app
@@ -23,7 +23,7 @@ Lokale repo: C:\Users\MaxvanLeeuwenBURGBed\BURG-Apps
 
 ## Supabase structuur
 
-### Tabel: `jobs` (hoofdtabel, ~165 rijen)
+### Tabel: `jobs` (hoofdtabel, leeg na fresh start juni 2026)
 | Kolom | Type | Toelichting |
 |---|---|---|
 | id | uuid | primary key |
@@ -56,6 +56,7 @@ Lokale repo: C:\Users\MaxvanLeeuwenBURGBed\BURG-Apps
 | company_linkedin | text | |
 | company_address | text | |
 | company_industry | text | |
+| company_phone | text | via Apollo enrichment |
 | company_name_display | text | |
 | enriched_at | timestamptz | Apollo enrichment timestamp |
 | employment_type | text | |
@@ -68,8 +69,8 @@ Lokale repo: C:\Users\MaxvanLeeuwenBURGBed\BURG-Apps
 | job_title_normalized | text | voor dedup |
 
 ### Tabel: `geziene_vacatures` (dedup tabel)
-Kolommen: `job_title_normalized`, `company_name_normalized`, `scraped_at`
-Wordt gecheckt via "If row does not exist" node in n8n vóór elke insert in jobs.
+Kolommen: `job_title_normalized`, `company_name_normalized`, `scraped_at`, `job_url`
+Dedup-check via "If row does not exist" node in n8n op `job_url` (voorheen op titel+bedrijf combinatie).
 
 ### Tabel: `employees` (6 rijen)
 Kolommen: `id`, `name`, `email`, `fte_hours`, `seniority_levels`, `is_present`
@@ -78,41 +79,39 @@ Kolommen: `id`, `name`, `email`, `fte_hours`, `seniority_levels`, `is_present`
 
 ## n8n Workflows
 
-### Workflow 1: "Apify Workflow 1" (id: R3Ky6mByr4CRooNC) ✅ ACTIEF
+### Workflow 1: "Apify Workflow 1" (id: R3Ky6mByr4CRooNC) ✅ ACTIEF — omgebouwd naar Thunderbit
 **Flow:**
 ```
-Apify Trigger (LinkedIn/Indeed/Werkzoeken) 
-  → Get dataset items 
-  → normalisatie_en_filtering (Code node) 
-  → If row does not exist (geziene_vacatures check) 
-  → Create a row (jobs tabel) 
-  → Insert row (geziene_vacatures)
+Schedule Trigger (07:45)
+  → Get row(s) in sheet (Indeed Scraper — Google Sheet)  [parallel]
+  → Get row(s) in sheet1 (LinkedIn Scraper — Google Sheet)  [parallel]
+  → Merge
+  → normalisatie_en_filtering (Code node)
+  → If row does not exist (geziene_vacatures check op job_url)
+  → Create a row (jobs tabel)
+  → Insert row (geziene_vacatures Data Table)
 ```
 
-**Apify actors:**
-- LinkedIn: `gdbRh93zn42kBYDyS` (curious_coder/linkedin-jobs-search-scraper)
-- Indeed: `qA8rz8tR61HdkfTBL` (curious_coder/indeed-scraper)
-- Werkzoeken.nl: `j4z8q58J839Zr6uJx` (blackfalcondata/werkzoeken-scraper)
-- Bedrijfswebsites: **nog toe te voegen** (Website Content Crawler, maxCrawlDepth: 1)
+**Thunderbit scrapers (vervangen Apify):**
+- LinkedIn: Thunderbit scraper, draait dagelijks om 06:15, schrijft naar Google Sheet 'LinkedIn Scraper'
+- Indeed: Thunderbit scraper, draait dagelijks om 06:45, schrijft naar Google Sheet 'Indeed Scraper'
+- Alle Apify nodes zijn disabled (nog aanwezig in workflow maar inactief)
 
 **normalisatie_en_filtering code node — wat hij doet:**
-1. `detectSource(j)` — bepaalt linkedin / indeed / werkzoeken.nl op basis van veldnamen
-2. `normalizeItem(j)` — mapt ruwe Apify output naar Supabase velden per source
-3. Filtert op QHSSE keywords in jobtitel (uitgebreide lijst aanwezig)
-4. Filtert op excludedCompanies (recruitmentbureaus, uitzendbureaus — grote lijst aanwezig)
-5. Filtert op excludedIndustries (staffing, HR, executive search)
-6. Filtert op excludedTitleWords (stage, intern, stagiair)
-7. Deduplicatie binnen dezelfde batch op job_url of titel+bedrijf combo
-8. Output: genormaliseerde items met job_title_normalized en company_name_normalized
-
-**NOG TOE TE VOEGEN aan normalisatie_en_filtering:**
-- Source detectie: `if (j.crawl && j.metadata) return 'bedrijfswebsite';`
-- Normalisatie blok voor bedrijfswebsite:
-  - Sla depth 0 items over (overzichtspagina's)
-  - Jobtitel: `metadata.title` splitsen op ' - ', laatste deel = bedrijfsnaam
-  - Locatie: `metadata.jsonLd[0].address.addressLocality`
-  - Beschrijving: `text` veld
-  - Contactgegevens: via bestaande `extractContact()` functie op `text` veld
+1. `detectSource(j)` — bepaalt bron op basis van veldnamen:
+   - `thunderbit_linkedin`: veld `Functietitel` aanwezig zonder `Functieomschrijving`
+   - `thunderbit_indeed`: veld `Functietitel` + `Functieomschrijving` aanwezig
+   - `thunderbit_indeed_oud`: veld `Job Title` + `Data Source` met indeed.com
+2. `normalizeItem(j)` — mapt ruwe Thunderbit output naar Supabase velden per source
+3. `date_scraped` wordt gevuld met `new Date().toISOString()`
+4. posted_at 1970-fix toegevoegd (filtert ongeldige epoch-datums)
+5. Corrupt items filter toegevoegd
+6. Filtert op QHSSE keywords in jobtitel
+7. Filtert op excludedCompanies (incl. &deBlauw Search toegevoegd)
+8. Filtert op excludedIndustries (staffing, HR, executive search)
+9. Filtert op excludedTitleWords (stage, intern, stagiair)
+10. Deduplicatie binnen batch op job_url
+11. Output: genormaliseerde items met job_title_normalized en company_name_normalized
 
 ### Workflow 2: "Apollo Enrichment" (id: z297XGfx0k31sB5a) ✅ ACTIEF
 **Flow:**
@@ -129,8 +128,8 @@ Webhook URL: `https://mvl1009.app.n8n.cloud/webhook/d9c398f5-d635-4fd2-b4ce-231b
 ---
 
 ## Wat werkt al ✅
-- LinkedIn, Indeed, Werkzoeken.nl scraping actief en dagelijks
-- Normalisatie + QHSSE keyword filter + excludedCompanies filter + dedup
+- LinkedIn + Indeed scraping via Thunderbit → Google Sheets → n8n (dagelijks)
+- Normalisatie + QHSSE keyword filter + excludedCompanies filter + dedup op job_url
 - Supabase insert via n8n
 - Swipe interface per medewerker (achter inlogscherm)
 - Pipeline.html met recruiter assignment en statusbeheer
@@ -139,19 +138,20 @@ Webhook URL: `https://mvl1009.app.n8n.cloud/webhook/d9c398f5-d635-4fd2-b4ce-231b
 
 ## Wat nog moet gebeuren 🔧
 
-### 1. Bedrijfswebsite scraping toevoegen (prioriteit)
-- Nieuwe Apify Trigger node in Workflow 1 voor Website Content Crawler
-- 207 gewone website URLs klaar om als startUrls in te voeren
-- 26 ATS URLs (Workday x4, Recruitee x4, etc.) apart aanpakken later
-- normalisatie_en_filtering code node uitbreiden met bedrijfswebsite blok
-- Schedule: 2x per maand (niet dagelijks)
+### 1. Werkzoeken.nl scraping herstellen
+- Was actief via Apify, nu disabled
+- Bepalen of via Thunderbit of andere aanpak
 
-### 2. Anthropic API koppelen aan n8n (via bedrijfsaccount)
+### 2. Bedrijfswebsite scraping toevoegen
+- Was gepland via Apify Website Content Crawler
+- Aanpak herzien nu Apify disabled is
+
+### 3. Anthropic API koppelen aan n8n (via bedrijfsaccount)
 - LLM-based QHSSE classificatie ter vervanging van keyword filter
 - Automatische seniority bepaling (nu krijgt alles 'medior')
 - Model: claude-haiku voor kostenefficiëntie (~$0.001 per vacature)
 
-### 3. Volledig automatische go/no-go (langetermijndoel)
+### 4. Volledig automatische go/no-go (langetermijndoel)
 - LLM beoordeelt vacatures op basis van historische swipe data in jobs tabel
 - Elke swipe nu = trainingsdata (review_status + nogo_reason zijn al aanwezig)
 - Swipe scherm wordt optioneel zodra model goed genoeg is
