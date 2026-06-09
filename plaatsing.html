@@ -75,9 +75,13 @@
 
         <div class="control-row">
           <span class="control-label">Vakantiegeld</span>
-          <div class="control-input">
-            <input type="range" min="0" max="8" step="1" value="8" id="sl-vak" oninput="calc()">
-            <span class="slider-val" id="lbl-vak">8%</span>
+          <div class="toggle-wrap">
+            <label class="toggle">
+              <input type="checkbox" id="tog-vak" checked onchange="calc()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+            <span class="toggle-val" id="lbl-vak">Ja &mdash; 8%</span>
           </div>
         </div>
 
@@ -99,7 +103,7 @@
         <div class="control-row">
           <span class="control-label">Bonus</span>
           <div class="control-input">
-            <input type="range" min="0" max="10" step="1" value="0" id="sl-bonus" oninput="calc()">
+            <input type="range" min="0" max="10" step="0.5" value="0" id="sl-bonus" oninput="calc()">
             <span class="slider-val" id="lbl-bonus">0%</span>
           </div>
         </div>
@@ -145,13 +149,16 @@
     function calc() {
       const maand    = parseDutch(document.getElementById('inp-salaris').value);
       const feePct   = parseDutch(document.getElementById('inp-fee').value);
-      const vak      = +document.getElementById('sl-vak').value / 100;
+      const vakAan   = document.getElementById('tog-vak').checked;
+      const vak      = vakAan ? 0.08 : 0;
       const lease    = document.getElementById('tog-lease').checked ? 6000 : 0;
       const bonusPct = +document.getElementById('sl-bonus').value / 100;
 
-      document.getElementById('lbl-vak').textContent   = (vak * 100).toFixed(0) + '%';
+      document.getElementById('lbl-vak').textContent   = vakAan ? 'Ja — 8%' : 'Nee — 0%';
       document.getElementById('lbl-lease').textContent = lease > 0 ? 'Ja — € 6.000' : 'Nee — € 0';
-      document.getElementById('lbl-bonus').textContent = (bonusPct * 100).toFixed(0) + '%';
+      document.getElementById('lbl-bonus').textContent = (bonusPct * 100) % 1 === 0
+        ? (bonusPct * 100).toFixed(0) + '%'
+        : (bonusPct * 100).toFixed(1).replace('.', ',') + '%';
 
       const wrapSalaris = document.getElementById('wrap-salaris');
       const wrapFee     = document.getElementById('wrap-fee');
