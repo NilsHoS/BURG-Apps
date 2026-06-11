@@ -50,9 +50,19 @@
     .tool-icon.das { background: #0d1a2e; }
     .tool-icon.mij { background: #2d4a7a; }
 
+    /* Gebruiksteller */
+    .tool-count {
+      font-size: 11px;
+      color: #b0aea8;
+      margin-top: 2px;
+      min-height: 14px;
+      display: block;
+    }
+
     @media (prefers-color-scheme: dark) {
       h1 { color: #e0dfd8; }
       .subtitle { color: #5f5e5a; }
+      .tool-count { color: #5f5e5a; }
     }
   </style>
 </head>
@@ -67,103 +77,112 @@
 
   <div class="tools">
 
-    <a href="./calculator.html" class="tool-card">
+    <a href="./calculator.html" class="tool-card" data-tool="fee-checker">
       <div class="tool-icon">
         <img src="./img-fee-checker.png" alt="Fee Checker">
       </div>
       <div class="tool-text">
         <div class="tool-name">Fee Checker</div>
         <div class="tool-desc">Schat de fee in vóór een gesprek</div>
+        <span class="tool-count" id="count-fee-checker"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
 
-    <a href="./jobpull.html" class="tool-card">
+    <a href="./jobpull.html" class="tool-card" data-tool="sales-overdracht">
       <div class="tool-icon">
         <img src="./img-jobpull.png" alt="Sales Overdracht">
       </div>
       <div class="tool-text">
         <div class="tool-name">Sales Overdracht</div>
         <div class="tool-desc">Draag een vacature over aan consultants</div>
+        <span class="tool-count" id="count-sales-overdracht"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
 
-    <a href="./plaatsing.html" class="tool-card">
+    <a href="./plaatsing.html" class="tool-card" data-tool="definitief-honorarium">
       <div class="tool-icon">
         <img src="./img-honorarium.png" alt="Definitief Honorarium">
       </div>
       <div class="tool-text">
         <div class="tool-name">Definitief Honorarium</div>
         <div class="tool-desc">Bereken het honorarium bij plaatsing</div>
+        <span class="tool-count" id="count-definitief-honorarium"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
 
     <!-- TIJDELIJK VERBORGEN — Pipeline, Sales Dashboard, Dashboard
-    <a href="./pipeline.html" class="tool-card">
+    <a href="./pipeline.html" class="tool-card" data-tool="pipeline">
       <div class="tool-icon">
         <img src="./img-pipeline.png" alt="Pipeline">
       </div>
       <div class="tool-text">
         <div class="tool-name">Pipeline</div>
         <div class="tool-desc">Beheer goedgekeurde vacatures en wijs toe aan recruiters</div>
+        <span class="tool-count" id="count-pipeline"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
 
-    <a href="./sales.html" class="tool-card">
+    <a href="./sales.html" class="tool-card" data-tool="sales-dashboard">
       <div class="tool-icon">
         <img src="./img-sales.png" alt="Sales Dashboard">
       </div>
       <div class="tool-text">
         <div class="tool-name">Sales Dashboard</div>
         <div class="tool-desc">Volg je leads op en beheer de sales status per vacature</div>
+        <span class="tool-count" id="count-sales-dashboard"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
 
-    <a href="./dashboard.html" class="tool-card">
+    <a href="./dashboard.html" class="tool-card" data-tool="dashboard">
       <div class="tool-icon">
         <img src="./img-dashboard.png" alt="Dashboard">
       </div>
       <div class="tool-text">
         <div class="tool-name">Dashboard</div>
         <div class="tool-desc">Overzicht van vacatures, sales en conversie</div>
+        <span class="tool-count" id="count-dashboard"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
     -->
 
-    <a href="./plaatsing-verdeling.html" class="tool-card">
+    <a href="./plaatsing-verdeling.html" class="tool-card" data-tool="verdeling-plaatsing">
       <div class="tool-icon">
         <img src="./img-verdeling.png" alt="Verdeling Plaatsing">
       </div>
       <div class="tool-text">
         <div class="tool-name">Verdeling Plaatsing</div>
         <div class="tool-desc">Verdeel de opbrengst na plaatsing</div>
+        <span class="tool-count" id="count-verdeling-plaatsing"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
 
-    <a href="./proeftijd.html" class="tool-card">
+    <a href="./proeftijd.html" class="tool-card" data-tool="proeftijd-tracker">
       <div class="tool-icon">
         <img src="./img-proeftijd.png" alt="Proeftijd Tracker">
       </div>
       <div class="tool-text">
         <div class="tool-name">Proeftijd Tracker</div>
         <div class="tool-desc">Volg de proeftijd van nieuwe kandidaten</div>
+        <span class="tool-count" id="count-proeftijd-tracker"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
 
-    <a href="./mijn-omgeving.html" class="tool-card">
+    <a href="./mijn-omgeving.html" class="tool-card" data-tool="mijn-omgeving">
       <div class="tool-icon">
         <img src="./img-mijn-omgeving.png" alt="Mijn Omgeving">
       </div>
       <div class="tool-text">
         <div class="tool-name">Mijn Omgeving</div>
         <div class="tool-desc">Jouw persoonlijke overzicht en instellingen</div>
+        <span class="tool-count" id="count-mijn-omgeving"></span>
       </div>
       <span class="tool-arrow">›</span>
     </a>
@@ -171,6 +190,63 @@
   </div>
 
   <p class="version">BURG QHSSE &middot; 2026</p>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const db = createClient(
+      'https://ziwqshuabwcthqjspuso.supabase.co',
+      'sb_publishable_PxbxG-9ArQCsrgF9-lAM8g_-uglxVYU'
+    );
+
+    const START_DATE = '2026-06-12T00:00:00Z';
+
+    // Laad tellingen en toon ze onder elke tile
+    async function loadCounts() {
+      try {
+        const { data, error } = await db
+          .from('tool_clicks')
+          .select('tool')
+          .gte('clicked_at', START_DATE);
+
+        if (error || !data) return;
+
+        // Tel per tool
+        const counts = {};
+        data.forEach(row => {
+          counts[row.tool] = (counts[row.tool] || 0) + 1;
+        });
+
+        // Zet teller in de tile
+        Object.entries(counts).forEach(([tool, count]) => {
+          const el = document.getElementById('count-' + tool);
+          if (el) el.textContent = count + '× gebruikt';
+        });
+      } catch (_) {
+        // Stil falen als tabel nog niet bestaat
+      }
+    }
+
+    // Log een klik naar Supabase
+    async function logClick(tool) {
+      try {
+        await db.from('tool_clicks').insert({ tool });
+      } catch (_) {}
+    }
+
+    // Koppel click-handlers aan alle tiles
+    document.querySelectorAll('.tool-card[data-tool]').forEach(card => {
+      card.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const tool = card.dataset.tool;
+        const href = card.href;
+        await logClick(tool);
+        window.location.href = href;
+      });
+    });
+
+    loadCounts();
+  </script>
 
 </body>
 </html>
