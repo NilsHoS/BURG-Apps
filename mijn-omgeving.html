@@ -242,6 +242,48 @@
   .fly-left { animation: flyLeft 0.35s ease forwards; }
   .fly-right { animation: flyRight 0.35s ease forwards; }
   .fly-up { animation: flyUp 0.3s ease forwards; }
+
+  /* ── Monitoring tab ── */
+  .mon-wrap { width: 100%; max-width: 700px; padding: 20px 20px 40px; display: flex; flex-direction: column; gap: 24px; }
+  .mon-section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; }
+  .mon-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .mon-period-bar { display: flex; gap: 4px; }
+  .mon-period-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 14px; cursor: pointer; transition: all 0.15s; }
+  .mon-period-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+  .mon-period-btn.active { background: var(--blue-light); border-color: var(--blue-light); color: white; }
+  .mon-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 12px; }
+  .mon-card:last-child { margin-bottom: 0; }
+  .mon-card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 500; margin-bottom: 14px; }
+  .mon-employee-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .mon-employee-row:last-child { border-bottom: none; }
+  .mon-emp-name { width: 90px; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+  .mon-emp-bar-wrap { flex: 1; height: 5px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+  .mon-emp-bar { height: 100%; background: var(--blue-light); border-radius: 3px; transition: width 0.5s ease; }
+  .mon-emp-count { font-size: 14px; font-weight: 700; min-width: 28px; text-align: right; }
+  .mon-emp-sub { font-size: 11px; color: var(--go); min-width: 48px; text-align: right; }
+  .mon-pending-group { margin-bottom: 14px; }
+  .mon-pending-group:last-child { margin-bottom: 0; }
+  .mon-pending-owner { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; }
+  .mon-pending-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; background: var(--surface); border-radius: 8px; margin-bottom: 4px; }
+  .mon-pending-job { font-size: 13px; font-weight: 500; }
+  .mon-pending-company { font-size: 11px; color: var(--blue-light); margin-top: 1px; }
+  .mon-pending-age { font-size: 11px; color: var(--amber); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .mon-pending-age.urgent { color: var(--nogo); }
+  .mon-pipeline-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .mon-pipeline-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 500; padding: 4px 8px 10px; text-align: center; }
+  .mon-pipeline-table th:first-child { text-align: left; }
+  .mon-pipeline-table td { padding: 5px 8px; border-top: 1px solid var(--border); text-align: center; vertical-align: middle; }
+  .mon-pipeline-table td:first-child { text-align: left; white-space: nowrap; }
+  .mon-source-pill { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .mon-pill-li { background: rgba(45,125,210,0.15); color: var(--blue-light); }
+  .mon-pill-in { background: rgba(155,93,229,0.15); color: var(--purple); }
+  .mon-pill-wz { background: rgba(244,162,97,0.15); color: var(--amber); }
+  .mon-pill-web { background: rgba(29,185,84,0.15); color: var(--go); }
+  .mon-warn-badge { display: inline-flex; align-items: center; gap: 3px; background: rgba(230,57,70,0.12); border: 1px solid rgba(230,57,70,0.3); color: var(--nogo); border-radius: 6px; padding: 1px 8px; font-size: 11px; font-weight: 700; }
+  .mon-totals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mon-total-item { background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+  .mon-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px; }
+  .mon-total-value { font-size: 26px; font-family: 'Syne', sans-serif; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -322,6 +364,41 @@
   <!-- Tab: Analytics (Nils only) -->
   <div class="tab-panel" id="tab-analytics" style="display:none">
     <iframe class="analytics-frame" id="analytics-frame" src="" title="Analytics"></iframe>
+  </div>
+
+  <!-- Tab: Monitoring (MAX only) -->
+  <div class="tab-panel" id="tab-monitoring" style="display:none">
+    <div class="mon-wrap">
+      <div>
+        <div class="mon-header">
+          <div class="mon-section-title">Gebruikersactiviteit</div>
+          <div class="mon-period-bar">
+            <button class="mon-period-btn" data-period="dag" onclick="setMonPeriod('dag')">Dag</button>
+            <button class="mon-period-btn active" data-period="week" onclick="setMonPeriod('week')">Week</button>
+            <button class="mon-period-btn" data-period="maand" onclick="setMonPeriod('maand')">Maand</button>
+          </div>
+        </div>
+        <div class="mon-card">
+          <div class="mon-card-title">Swipes per medewerker</div>
+          <div id="mon-swipes-list"></div>
+        </div>
+        <div class="mon-card">
+          <div class="mon-card-title">Openstaande vacatures &gt; 24 uur (pending)</div>
+          <div id="mon-pending-list"></div>
+        </div>
+      </div>
+      <div>
+        <div class="mon-section-title" style="margin-bottom:12px">Pipeline gezondheid</div>
+        <div class="mon-card">
+          <div class="mon-card-title">Nieuwe vacatures per dag — laatste 14 dagen</div>
+          <div id="mon-daily-chart"></div>
+        </div>
+        <div class="mon-card">
+          <div class="mon-card-title">Totaal per bron (all-time)</div>
+          <div id="mon-source-totals"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -407,6 +484,7 @@ const supabase = createClient(
 );
 
 const NILS = 'nils.denherder@burgqhsse.nl';
+const MAX = 'max.vanleeuwen@burgbedrijven.nl';
 const SALES_STATUSES = ['On hold', 'Nieuwe kans', 'Gemaild', 'Lopend contact', 'Hot', 'Jobpull', 'Closed won', 'Closed loss'];
 const NOGO_REASONS = ['Verkeerde sector','Te operationeel','Intermediair / uitzendbureau','Te junior / stage','Buiten werkgebied','Dubbeling / al bekend','Overig'];
 
@@ -416,6 +494,9 @@ let presenceChanged = false;
 
 // swipe state
 let swVacatures = [], swTotal = 0, swCurrent = 0, swDecisions = [], swActiveCard = null, swPendingNogoId = null;
+
+// monitoring state
+let monPeriod = 'week';
 let swOverlayMode = false;
 
 // mijn vacatures state
@@ -470,6 +551,15 @@ if (!session) {
     document.getElementById('tab-analytics').style.display = '';
   }
 
+  if (currentUser.email === MAX) {
+    document.getElementById('presence-block').style.display = 'none';
+    const tabBar = document.getElementById('tab-bar');
+    tabBar.innerHTML = `<button class="tab-btn active" data-tab="monitoring" onclick="switchTab('monitoring')">Monitoring</button>`;
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-monitoring').style.display = '';
+    document.getElementById('tab-monitoring').classList.add('active');
+  }
+
   await init();
 }
 
@@ -481,6 +571,10 @@ window.doLogout = async function() {
 // ── Init ───────────────────────────────────────────────
 async function init() {
   await loadEmployees();
+  if (currentUser.email === MAX) {
+    loadMonitoring();
+    return;
+  }
   await distributeUnassigned();
   loadSwipe();
   loadMijnVacatures();
@@ -587,6 +681,7 @@ window.switchTab = function(tab) {
     const frame = document.getElementById('analytics-frame');
     frame.src = './dashboard.html';
   }
+  if (tab === 'monitoring') loadMonitoring();
 };
 
 // ── Swipe tab ──────────────────────────────────────────
@@ -1299,6 +1394,209 @@ window.toggleSc2Desc = function(btn) {
   const open = body.classList.toggle('open');
   btn.textContent = open ? 'Vacaturetekst verbergen ↑' : 'Vacaturetekst lezen ↓';
 };
+
+// ── Monitoring tab ─────────────────────────────────────
+async function loadMonitoring() {
+  await Promise.all([renderMonSwipes(), renderMonPending(), renderMonPipelineHealth()]);
+}
+
+window.setMonPeriod = function(p) {
+  monPeriod = p;
+  document.querySelectorAll('.mon-period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === p));
+  renderMonSwipes();
+};
+
+function getMonPeriodStart() {
+  if (monPeriod === 'dag') return new Date(Date.now() - 86400000);
+  if (monPeriod === 'maand') return new Date(Date.now() - 30 * 86400000);
+  return new Date(Date.now() - 7 * 86400000);
+}
+
+async function renderMonSwipes() {
+  const container = document.getElementById('mon-swipes-list');
+  if (!container) return;
+  container.innerHTML = '<div class="list-loading" style="padding:16px 0 4px"><div class="spinner"></div></div>';
+
+  const since = getMonPeriodStart().toISOString();
+  const { data, error } = await supabase.from('jobs')
+    .select('assigned_to, review_status')
+    .in('review_status', ['go', 'nogo'])
+    .gte('reviewed_at', since)
+    .not('reviewed_at', 'is', null);
+
+  if (error) { container.innerHTML = `<div style="color:var(--nogo);font-size:13px">${esc(error.message)}</div>`; return; }
+
+  const counts = {};
+  employees.forEach(e => { counts[e.email] = { go: 0, nogo: 0, name: e.name }; });
+  (data || []).forEach(j => {
+    if (j.assigned_to && counts[j.assigned_to]) counts[j.assigned_to][j.review_status]++;
+  });
+
+  const rows = Object.values(counts)
+    .map(d => ({ ...d, total: d.go + d.nogo }))
+    .sort((a, b) => b.total - a.total);
+
+  const maxCount = Math.max(...rows.map(r => r.total), 1);
+
+  container.innerHTML = rows.map(r => `
+    <div class="mon-employee-row">
+      <span class="mon-emp-name">${esc(r.name.split(' ')[0])}</span>
+      <div class="mon-emp-bar-wrap">
+        <div class="mon-emp-bar" style="width:${(r.total / maxCount * 100).toFixed(1)}%"></div>
+      </div>
+      <span class="mon-emp-count">${r.total}</span>
+      <span class="mon-emp-sub">+${r.go} go</span>
+    </div>`).join('');
+}
+
+async function renderMonPending() {
+  const container = document.getElementById('mon-pending-list');
+  if (!container) return;
+  container.innerHTML = '<div class="list-loading" style="padding:16px 0 4px"><div class="spinner"></div></div>';
+
+  const cutoff = new Date(Date.now() - 86400000).toISOString();
+  const { data, error } = await supabase.from('jobs')
+    .select('id, job_title, company_name, assigned_to, created_at')
+    .eq('review_status', 'pending')
+    .lt('created_at', cutoff)
+    .order('assigned_to')
+    .order('created_at');
+
+  if (error) { container.innerHTML = `<div style="color:var(--nogo);font-size:13px">${esc(error.message)}</div>`; return; }
+
+  const jobs = data || [];
+  if (jobs.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">Geen vacatures langer dan 24u pending. ✓</div>';
+    return;
+  }
+
+  const emailToName = {};
+  employees.forEach(e => { emailToName[e.email] = e.name; });
+
+  const groups = {};
+  jobs.forEach(j => {
+    const owner = j.assigned_to || '— niet toegewezen —';
+    if (!groups[owner]) groups[owner] = [];
+    groups[owner].push(j);
+  });
+
+  container.innerHTML = Object.entries(groups).map(([owner, ownerJobs]) => {
+    const ownerName = emailToName[owner] || owner;
+    const rowsHtml = ownerJobs.map(j => {
+      const ageMs = Date.now() - new Date(j.created_at).getTime();
+      const ageHours = Math.floor(ageMs / 3600000);
+      const ageDays = Math.floor(ageHours / 24);
+      const ageStr = ageDays >= 2 ? `${ageDays} dagen` : `${ageHours}u`;
+      const urgent = ageHours >= 48;
+      return `<div class="mon-pending-row">
+        <div>
+          <div class="mon-pending-job">${esc(j.job_title || '—')}</div>
+          <div class="mon-pending-company">${esc(j.company_name || '—')}</div>
+        </div>
+        <span class="mon-pending-age${urgent ? ' urgent' : ''}">${ageStr}</span>
+      </div>`;
+    }).join('');
+    return `<div class="mon-pending-group">
+      <div class="mon-pending-owner">${esc(ownerName)}</div>
+      ${rowsHtml}
+    </div>`;
+  }).join('');
+}
+
+async function renderMonPipelineHealth() {
+  await Promise.all([renderMonDailyChart(), renderMonSourceTotals()]);
+}
+
+async function renderMonDailyChart() {
+  const container = document.getElementById('mon-daily-chart');
+  if (!container) return;
+  container.innerHTML = '<div class="list-loading" style="padding:16px 0 4px"><div class="spinner"></div></div>';
+
+  const since = new Date(Date.now() - 14 * 86400000).toISOString();
+  const { data, error } = await supabase.from('jobs')
+    .select('created_at, data_source')
+    .gte('created_at', since);
+
+  if (error) { container.innerHTML = `<div style="color:var(--nogo);font-size:13px">${esc(error.message)}</div>`; return; }
+
+  const map = {};
+  (data || []).forEach(j => {
+    const key = j.created_at ? j.created_at.slice(0, 10) : '?';
+    if (!map[key]) map[key] = {};
+    const src = (j.data_source || 'overig').toLowerCase();
+    map[key][src] = (map[key][src] || 0) + 1;
+  });
+
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const key = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' });
+    days.push({ key, label, counts: map[key] || {} });
+  }
+
+  const sources = [
+    { key: 'linkedin', cls: 'mon-pill-li' },
+    { key: 'indeed', cls: 'mon-pill-in' },
+    { key: 'werkzoeken.nl', cls: 'mon-pill-wz' },
+    { key: 'bedrijfswebsite', cls: 'mon-pill-web' },
+  ];
+
+  const rows = days.map(day => {
+    const total = Object.values(day.counts).reduce((a, b) => a + b, 0);
+    const sourceCells = sources.map(s => {
+      const cnt = day.counts[s.key] || 0;
+      return `<td>${cnt > 0 ? `<span class="mon-source-pill ${s.cls}">${cnt}</span>` : '<span style="color:var(--border)">—</span>'}</td>`;
+    }).join('');
+    return `<tr>
+      <td>${day.label}</td>
+      ${sourceCells}
+      <td style="font-weight:600">${total === 0 ? `<span class="mon-warn-badge">⚠ 0</span>` : total}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `<div style="overflow-x:auto">
+    <table class="mon-pipeline-table">
+      <thead><tr>
+        <th>Datum</th>
+        <th>LinkedIn</th>
+        <th>Indeed</th>
+        <th>Werkzoeken</th>
+        <th>Website</th>
+        <th>Totaal</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+async function renderMonSourceTotals() {
+  const container = document.getElementById('mon-source-totals');
+  if (!container) return;
+  container.innerHTML = '<div class="list-loading" style="padding:16px 0 4px"><div class="spinner"></div></div>';
+
+  const { data, error } = await supabase.from('jobs').select('data_source');
+  if (error) { container.innerHTML = `<div style="color:var(--nogo);font-size:13px">${esc(error.message)}</div>`; return; }
+
+  const counts = {};
+  (data || []).forEach(j => {
+    const src = (j.data_source || '').toLowerCase();
+    counts[src] = (counts[src] || 0) + 1;
+  });
+
+  const sources = [
+    { key: 'linkedin', label: 'LinkedIn', cls: 'mon-pill-li' },
+    { key: 'indeed', label: 'Indeed', cls: 'mon-pill-in' },
+    { key: 'werkzoeken.nl', label: 'Werkzoeken.nl', cls: 'mon-pill-wz' },
+    { key: 'bedrijfswebsite', label: 'Bedrijfswebsite', cls: 'mon-pill-web' },
+  ];
+
+  container.innerHTML = `<div class="mon-totals-grid">${sources.map(s => `
+    <div class="mon-total-item">
+      <div class="mon-total-label"><span class="mon-source-pill ${s.cls}">${s.label}</span></div>
+      <div class="mon-total-value">${counts[s.key] || 0}</div>
+    </div>`).join('')}</div>`;
+}
 
 </script>
 </body>
