@@ -284,6 +284,14 @@
   .mon-total-item { background: var(--surface); border-radius: 10px; padding: 12px 14px; }
   .mon-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px; }
   .mon-total-value { font-size: 26px; font-family: 'Syne', sans-serif; font-weight: 700; }
+  .mon-pending-day-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 10px; background: var(--surface); border-radius: 8px; margin-bottom: 4px; font-size: 13px; }
+  .mon-pending-day-date { color: var(--text-muted); font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .mon-nogo-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .mon-nogo-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); font-weight: 500; padding: 4px 8px 10px; text-align: center; white-space: nowrap; }
+  .mon-nogo-table th:first-child { text-align: left; }
+  .mon-nogo-table td { padding: 6px 8px; border-top: 1px solid var(--border); text-align: center; }
+  .mon-nogo-table td:first-child { text-align: left; font-weight: 500; white-space: nowrap; }
+  .mon-nogo-count { display: inline-block; min-width: 20px; font-weight: 600; color: var(--nogo); }
 </style>
 </head>
 <body>
@@ -383,7 +391,11 @@
           <div id="mon-swipes-list"></div>
         </div>
         <div class="mon-card">
-          <div class="mon-card-title">Openstaande vacatures &gt; 24 uur (pending)</div>
+          <div class="mon-card-title">No-go redenen per medewerker</div>
+          <div id="mon-nogo-table" style="overflow-x:auto"></div>
+        </div>
+        <div class="mon-card">
+          <div class="mon-card-title">Openstaande vacatures per dag (nog niet beoordeeld)</div>
           <div id="mon-pending-list"></div>
         </div>
       </div>
@@ -1397,13 +1409,14 @@ window.toggleSc2Desc = function(btn) {
 
 // ── Monitoring tab ─────────────────────────────────────
 async function loadMonitoring() {
-  await Promise.all([renderMonSwipes(), renderMonPending(), renderMonPipelineHealth()]);
+  await Promise.all([renderMonSwipes(), renderMonNogoReasons(), renderMonPending(), renderMonPipelineHealth()]);
 }
 
 window.setMonPeriod = function(p) {
   monPeriod = p;
   document.querySelectorAll('.mon-period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === p));
   renderMonSwipes();
+  renderMonNogoReasons();
 };
 
 function getMonPeriodStart() {
@@ -1449,56 +1462,125 @@ async function renderMonSwipes() {
     </div>`).join('');
 }
 
+const MON_NOGO_REASONS = [
+  'Verkeerde sector',
+  'Te operationeel',
+  'Intermediair / uitzendbureau',
+  'Te junior / stage',
+  'Buiten werkgebied',
+  'Dubbeling / al bekend',
+  'Overig',
+];
+const MON_NOGO_SHORT = {
+  'Verkeerde sector': 'Verk. sector',
+  'Te operationeel': 'Operationeel',
+  'Intermediair / uitzendbureau': 'Intermediair',
+  'Te junior / stage': 'Te junior',
+  'Buiten werkgebied': 'Buiten WG',
+  'Dubbeling / al bekend': 'Dubbeling',
+  'Overig': 'Overig',
+  '__geen__': 'Geen reden',
+};
+
+async function renderMonNogoReasons() {
+  const container = document.getElementById('mon-nogo-table');
+  if (!container) return;
+  container.innerHTML = '<div class="list-loading" style="padding:16px 0 4px"><div class="spinner"></div></div>';
+
+  const since = getMonPeriodStart().toISOString();
+  const { data, error } = await supabase.from('jobs')
+    .select('assigned_to, nogo_reason')
+    .eq('review_status', 'nogo')
+    .gte('reviewed_at', since)
+    .not('reviewed_at', 'is', null);
+
+  if (error) { container.innerHTML = `<div style="color:var(--nogo);font-size:13px">${esc(error.message)}</div>`; return; }
+
+  const allCols = [...MON_NOGO_REASONS, '__geen__'];
+
+  const matrix = {};
+  employees.forEach(e => {
+    matrix[e.email] = {};
+    allCols.forEach(r => { matrix[e.email][r] = 0; });
+  });
+  (data || []).forEach(j => {
+    if (!j.assigned_to || !matrix[j.assigned_to]) return;
+    const key = j.nogo_reason && matrix[j.assigned_to][j.nogo_reason] !== undefined
+      ? j.nogo_reason : '__geen__';
+    matrix[j.assigned_to][key]++;
+  });
+
+  const headerCells = allCols.map(r =>
+    `<th title="${esc(r === '__geen__' ? 'Geen reden opgegeven' : r)}">${esc(MON_NOGO_SHORT[r])}</th>`
+  ).join('');
+
+  const bodyRows = employees.map(e => {
+    const row = matrix[e.email];
+    const cells = allCols.map(r => {
+      const v = row[r] || 0;
+      return `<td>${v > 0 ? `<span class="mon-nogo-count">${v}</span>` : '<span style="color:var(--border)">—</span>'}</td>`;
+    }).join('');
+    return `<tr><td>${esc(e.name.split(' ')[0])}</td>${cells}</tr>`;
+  }).join('');
+
+  container.innerHTML = `<table class="mon-nogo-table">
+    <thead><tr><th></th>${headerCells}</tr></thead>
+    <tbody>${bodyRows}</tbody>
+  </table>`;
+}
+
 async function renderMonPending() {
   const container = document.getElementById('mon-pending-list');
   if (!container) return;
   container.innerHTML = '<div class="list-loading" style="padding:16px 0 4px"><div class="spinner"></div></div>';
 
-  const cutoff = new Date(Date.now() - 86400000).toISOString();
   const { data, error } = await supabase.from('jobs')
-    .select('id, job_title, company_name, assigned_to, created_at')
+    .select('assigned_to, created_at')
     .eq('review_status', 'pending')
-    .lt('created_at', cutoff)
-    .order('assigned_to')
-    .order('created_at');
+    .not('assigned_to', 'is', null);
 
   if (error) { container.innerHTML = `<div style="color:var(--nogo);font-size:13px">${esc(error.message)}</div>`; return; }
 
   const jobs = data || [];
   if (jobs.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">Geen vacatures langer dan 24u pending. ✓</div>';
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">Geen openstaande vacatures. ✓</div>';
     return;
   }
 
   const emailToName = {};
   employees.forEach(e => { emailToName[e.email] = e.name; });
 
+  // group: email → dateKey → count
   const groups = {};
   jobs.forEach(j => {
-    const owner = j.assigned_to || '— niet toegewezen —';
-    if (!groups[owner]) groups[owner] = [];
-    groups[owner].push(j);
+    if (!groups[j.assigned_to]) groups[j.assigned_to] = {};
+    const day = j.created_at ? j.created_at.slice(0, 10) : 'onbekend';
+    groups[j.assigned_to][day] = (groups[j.assigned_to][day] || 0) + 1;
   });
 
-  container.innerHTML = Object.entries(groups).map(([owner, ownerJobs]) => {
-    const ownerName = emailToName[owner] || owner;
-    const rowsHtml = ownerJobs.map(j => {
-      const ageMs = Date.now() - new Date(j.created_at).getTime();
-      const ageHours = Math.floor(ageMs / 3600000);
-      const ageDays = Math.floor(ageHours / 24);
-      const ageStr = ageDays >= 2 ? `${ageDays} dagen` : `${ageHours}u`;
-      const urgent = ageHours >= 48;
-      return `<div class="mon-pending-row">
-        <div>
-          <div class="mon-pending-job">${esc(j.job_title || '—')}</div>
-          <div class="mon-pending-company">${esc(j.company_name || '—')}</div>
-        </div>
-        <span class="mon-pending-age${urgent ? ' urgent' : ''}">${ageStr}</span>
-      </div>`;
-    }).join('');
+  // render per employee in employees-table order
+  const empEmails = employees.map(e => e.email).filter(e => groups[e]);
+  if (empEmails.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">Geen openstaande vacatures. ✓</div>';
+    return;
+  }
+
+  container.innerHTML = empEmails.map(email => {
+    const ownerName = (emailToName[email] || email).split(' ')[0];
+    const dayLines = Object.entries(groups[email])
+      .sort((a, b) => b[0].localeCompare(a[0])) // meest recent eerst
+      .map(([day, count]) => {
+        const label = day !== 'onbekend'
+          ? new Date(day + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+          : 'onbekende datum';
+        return `<div class="mon-pending-day-row">
+          <span class="mon-pending-day-date">${label}</span>
+          <span><strong>${count}</strong> vacature${count !== 1 ? 's' : ''} niet beoordeeld</span>
+        </div>`;
+      }).join('');
     return `<div class="mon-pending-group">
       <div class="mon-pending-owner">${esc(ownerName)}</div>
-      ${rowsHtml}
+      ${dayLines}
     </div>`;
   }).join('');
 }
