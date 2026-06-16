@@ -284,8 +284,19 @@
   .mon-total-item { background: var(--surface); border-radius: 10px; padding: 12px 14px; }
   .mon-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px; }
   .mon-total-value { font-size: 26px; font-family: 'Syne', sans-serif; font-weight: 700; }
-  .mon-pending-day-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 10px; background: var(--surface); border-radius: 8px; margin-bottom: 4px; font-size: 13px; }
-  .mon-pending-day-date { color: var(--text-muted); font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .mon-pending-emp { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .mon-pending-emp:last-child { margin-bottom: 0; }
+  .mon-pending-toggle { width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--surface); border: none; cursor: pointer; text-align: left; color: var(--text); font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
+  .mon-pending-toggle:hover { background: rgba(255,255,255,0.03); }
+  .mon-pending-emp-name { font-size: 14px; font-weight: 600; flex: 1; }
+  .mon-pending-count-badge { background: rgba(230,57,70,0.14); color: var(--nogo); border: 1px solid rgba(230,57,70,0.3); border-radius: 20px; font-size: 11px; font-weight: 700; padding: 2px 9px; }
+  .mon-pending-chevron { font-size: 16px; color: var(--text-muted); transition: transform 0.2s; line-height: 1; }
+  .mon-pending-jobs { background: var(--surface2); }
+  .mon-pending-job-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--border); }
+  .mon-pj-title { font-size: 13px; font-weight: 500; }
+  .mon-pj-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .mon-pj-btn { flex-shrink: 0; background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 12px; cursor: pointer; transition: border-color 0.15s, color 0.15s; white-space: nowrap; }
+  .mon-pj-btn:hover { border-color: var(--blue-light); color: var(--blue-light); }
   .mon-nogo-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .mon-nogo-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); font-weight: 500; padding: 4px 8px 10px; text-align: center; white-space: nowrap; }
   .mon-nogo-table th:first-child { text-align: left; }
@@ -395,7 +406,7 @@
           <div id="mon-nogo-table" style="overflow-x:auto"></div>
         </div>
         <div class="mon-card">
-          <div class="mon-card-title">Openstaande vacatures per dag (nog niet beoordeeld)</div>
+          <div class="mon-card-title">Openstaande vacatures &gt; 24 uur (per medewerker)</div>
           <div id="mon-pending-list"></div>
         </div>
       </div>
@@ -519,9 +530,13 @@ let sc2Jobs = [];
 
 // doorsturen state
 let doorstruenJobId = null;
+let doorstruenCallback = null;
 
 // approve state (second check)
 let approveJobId = null;
+
+// monitoring pending state
+let monPendingJobs = [];
 
 const noteTimers = {};
 
@@ -1294,8 +1309,9 @@ window.scheduleNotesSave = function(id, value) {
 };
 
 // ── Doorsturen modal ───────────────────────────────────
-window.openDoorsturen = function(jobId, title, company) {
+window.openDoorsturen = function(jobId, title, company, onConfirm) {
   doorstruenJobId = jobId;
+  doorstruenCallback = onConfirm || null;
   document.getElementById('doorsturen-sub').textContent = `${title} — ${company}`;
   const sel = document.getElementById('doorsturen-select');
   sel.innerHTML = employees.map(e => e.email !== currentUser.email ? `<option value="${esc(e.email)}">${esc(e.name)}</option>` : '').join('');
@@ -1307,6 +1323,7 @@ window.closeDoorsturen = function() {
   document.getElementById('doorsturen-overlay').classList.remove('open');
   document.getElementById('doorsturen-modal').classList.remove('open');
   doorstruenJobId = null;
+  doorstruenCallback = null;
 };
 
 window.confirmDoorsturen = async function() {
@@ -1314,13 +1331,18 @@ window.confirmDoorsturen = async function() {
   if (!doorstruenJobId || !toEmail) return;
   await supabase.from('jobs').update({ assigned_to: toEmail }).eq('id', doorstruenJobId);
   const removedId = doorstruenJobId;
+  const cb = doorstruenCallback;
   closeDoorsturen();
   showToast('Vacature doorgestuurd.');
-  mvJobs = mvJobs.filter(j => j.id !== removedId);
-  document.querySelector(`.vacancy-card[data-id="${removedId}"]`)?.remove();
-  renderMvSummary();
-  const filtered = mvActiveFilter === 'all' ? mvJobs : mvJobs.filter(j => getMvStatus(j) === mvActiveFilter);
-  if (filtered.length === 0) document.getElementById('mv-list').innerHTML = '<div class="list-empty"><span>📭</span><p>Geen vacatures in dit filter.</p></div>';
+  if (cb) {
+    cb(removedId, toEmail);
+  } else {
+    mvJobs = mvJobs.filter(j => j.id !== removedId);
+    document.querySelector(`.vacancy-card[data-id="${removedId}"]`)?.remove();
+    renderMvSummary();
+    const filtered = mvActiveFilter === 'all' ? mvJobs : mvJobs.filter(j => getMvStatus(j) === mvActiveFilter);
+    if (filtered.length === 0) document.getElementById('mv-list').innerHTML = '<div class="list-empty"><span>📭</span><p>Geen vacatures in dit filter.</p></div>';
+  }
 };
 
 // ── Second Check tab ───────────────────────────────────
@@ -1534,56 +1556,85 @@ async function renderMonPending() {
   if (!container) return;
   container.innerHTML = '<div class="list-loading" style="padding:16px 0 4px"><div class="spinner"></div></div>';
 
+  const cutoff = new Date(Date.now() - 86400000).toISOString();
   const { data, error } = await supabase.from('jobs')
-    .select('assigned_to, created_at')
+    .select('id, job_title, company_name, assigned_to, created_at')
     .eq('review_status', 'pending')
-    .not('assigned_to', 'is', null);
+    .not('assigned_to', 'is', null)
+    .lt('created_at', cutoff);
 
   if (error) { container.innerHTML = `<div style="color:var(--nogo);font-size:13px">${esc(error.message)}</div>`; return; }
 
-  const jobs = data || [];
-  if (jobs.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">Geen openstaande vacatures. ✓</div>';
-    return;
-  }
+  monPendingJobs = data || [];
+  renderMonPendingUI();
+}
+
+function renderMonPendingUI() {
+  const container = document.getElementById('mon-pending-list');
+  if (!container) return;
 
   const emailToName = {};
   employees.forEach(e => { emailToName[e.email] = e.name; });
 
-  // group: email → dateKey → count
   const groups = {};
-  jobs.forEach(j => {
-    if (!groups[j.assigned_to]) groups[j.assigned_to] = {};
-    const day = j.created_at ? j.created_at.slice(0, 10) : 'onbekend';
-    groups[j.assigned_to][day] = (groups[j.assigned_to][day] || 0) + 1;
+  monPendingJobs.forEach(j => {
+    if (!groups[j.assigned_to]) groups[j.assigned_to] = [];
+    groups[j.assigned_to].push(j);
   });
 
-  // render per employee in employees-table order
-  const empEmails = employees.map(e => e.email).filter(e => groups[e]);
+  const empEmails = employees.map(e => e.email).filter(e => groups[e] && groups[e].length > 0);
+
   if (empEmails.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">Geen openstaande vacatures. ✓</div>';
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">Geen vacatures langer dan 24u pending. ✓</div>';
     return;
   }
 
   container.innerHTML = empEmails.map(email => {
     const ownerName = (emailToName[email] || email).split(' ')[0];
-    const dayLines = Object.entries(groups[email])
-      .sort((a, b) => b[0].localeCompare(a[0])) // meest recent eerst
-      .map(([day, count]) => {
-        const label = day !== 'onbekend'
-          ? new Date(day + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
-          : 'onbekende datum';
-        return `<div class="mon-pending-day-row">
-          <span class="mon-pending-day-date">${label}</span>
-          <span><strong>${count}</strong> vacature${count !== 1 ? 's' : ''} niet beoordeeld</span>
-        </div>`;
-      }).join('');
-    return `<div class="mon-pending-group">
-      <div class="mon-pending-owner">${esc(ownerName)}</div>
-      ${dayLines}
+    const ownerJobs = groups[email].slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const count = ownerJobs.length;
+
+    const jobRows = ownerJobs.map(j => {
+      const ms = Date.now() - new Date(j.created_at).getTime();
+      const hours = Math.floor(ms / 3600000);
+      const days = Math.floor(hours / 24);
+      const ageStr = days >= 1 ? `${days} dag${days !== 1 ? 'en' : ''} geleden` : `${hours} uur geleden`;
+      return `<div class="mon-pending-job-row">
+        <div>
+          <div class="mon-pj-title">${esc(j.job_title || '—')}</div>
+          <div class="mon-pj-meta">${esc(j.company_name || '—')} · ${ageStr}</div>
+        </div>
+        <button class="mon-pj-btn" onclick="monOpenDoorsturen('${j.id}')">Doorschuiven →</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="mon-pending-emp">
+      <button class="mon-pending-toggle" onclick="toggleMonPendingEmp(this)">
+        <span class="mon-pending-emp-name">${esc(ownerName)}</span>
+        <span class="mon-pending-count-badge">${count}</span>
+        <span class="mon-pending-chevron">›</span>
+      </button>
+      <div class="mon-pending-jobs" style="display:none">${jobRows}</div>
     </div>`;
   }).join('');
 }
+
+window.toggleMonPendingEmp = function(btn) {
+  const jobs = btn.nextElementSibling;
+  const isOpen = jobs.style.display !== 'none';
+  jobs.style.display = isOpen ? 'none' : '';
+  btn.querySelector('.mon-pending-chevron').style.transform = isOpen ? '' : 'rotate(90deg)';
+};
+
+window.monOpenDoorsturen = function(jobId) {
+  const job = monPendingJobs.find(j => j.id === jobId);
+  if (!job) return;
+  openDoorsturen(job.id, job.job_title || '—', job.company_name || '—', (removedId, toEmail) => {
+    const j = monPendingJobs.find(j => j.id === removedId);
+    if (j) j.assigned_to = toEmail;
+    renderMonPendingUI();
+  });
+};
 
 async function renderMonPipelineHealth() {
   await Promise.all([renderMonDailyChart(), renderMonSourceTotals()]);
