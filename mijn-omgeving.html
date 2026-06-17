@@ -585,8 +585,10 @@ if (!session) {
     const tabBar = document.getElementById('tab-bar');
     tabBar.innerHTML += `<button class="tab-btn" data-tab="secondcheck" onclick="switchTab('secondcheck')">Second Check <span class="tab-badge red" id="badge-sc2">0</span></button>`;
     tabBar.innerHTML += `<button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">Analytics</button>`;
+    tabBar.innerHTML += `<button class="tab-btn" data-tab="monitoring" onclick="switchTab('monitoring')">Monitoring</button>`;
     document.getElementById('tab-secondcheck').style.display = '';
     document.getElementById('tab-analytics').style.display = '';
+    document.getElementById('tab-monitoring').style.display = '';
   }
 
   if (currentUser.email === MAX) {
