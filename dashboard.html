@@ -112,39 +112,42 @@ Chart.defaults.color = '#8888a0';
 Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
 Chart.defaults.font.family = "'DM Sans', sans-serif";
 
-const SALES_STATUSES = ['On hold', 'Nieuwe kans', 'Gemaild', 'Lopend contact', 'Hot', 'Jobpull', 'Closed won', 'Closed loss'];
+const SALES_STATUSES = ['On hold', 'Nieuwe kans', 'Toegevoegd aan Bullhorn', 'Gemaild', 'Lopend contact', 'Hot', 'Jobpull', 'Closed won', 'Closed loss'];
 
 const STATUS_COLORS = {
-  'On hold':        'rgba(136,136,160,0.40)',
-  'Nieuwe kans':    'rgba(45,125,210,0.75)',
-  'Gemaild':        'rgba(100,160,220,0.65)',
-  'Lopend contact': 'rgba(155,93,229,0.70)',
-  'Hot':            'rgba(230,57,70,0.75)',
-  'Jobpull':        'rgba(244,162,97,0.75)',
-  'Closed won':     'rgba(29,185,84,0.80)',
-  'Closed loss':    'rgba(230,57,70,0.30)',
+  'On hold':                 'rgba(136,136,160,0.40)',
+  'Nieuwe kans':             'rgba(45,125,210,0.75)',
+  'Toegevoegd aan Bullhorn': 'rgba(20,184,166,0.70)',
+  'Gemaild':                 'rgba(100,160,220,0.65)',
+  'Lopend contact':          'rgba(155,93,229,0.70)',
+  'Hot':                     'rgba(230,57,70,0.75)',
+  'Jobpull':                 'rgba(244,162,97,0.75)',
+  'Closed won':              'rgba(29,185,84,0.80)',
+  'Closed loss':             'rgba(230,57,70,0.30)',
 };
 
 const STATUS_PILL_CLASS = {
-  'On hold':        'pill-on-hold',
-  'Nieuwe kans':    'pill-nieuwe-kans',
-  'Gemaild':        'pill-gemaild',
-  'Lopend contact': 'pill-lopend-contact',
-  'Hot':            'pill-hot',
-  'Jobpull':        'pill-jobpull',
-  'Closed won':     'pill-closed-won',
-  'Closed loss':    'pill-closed-loss',
+  'On hold':                 'pill-on-hold',
+  'Nieuwe kans':             'pill-nieuwe-kans',
+  'Toegevoegd aan Bullhorn': 'pill-bullhorn',
+  'Gemaild':                 'pill-gemaild',
+  'Lopend contact':          'pill-lopend-contact',
+  'Hot':                     'pill-hot',
+  'Jobpull':                 'pill-jobpull',
+  'Closed won':              'pill-closed-won',
+  'Closed loss':             'pill-closed-loss',
 };
 
 const PIPELINE_WEIGHTS = {
-  'On hold':        0,
-  'Nieuwe kans':    0.05,
-  'Gemaild':        0.10,
-  'Lopend contact': 0.15,
-  'Hot':            0.50,
-  'Jobpull':        0.75,
-  'Closed won':     1.00,
-  'Closed loss':    0,
+  'On hold':                 0,
+  'Nieuwe kans':             0.05,
+  'Toegevoegd aan Bullhorn': 0.05,
+  'Gemaild':                 0.10,
+  'Lopend contact':          0.15,
+  'Hot':                     0.50,
+  'Jobpull':                 0.75,
+  'Closed won':              1.00,
+  'Closed loss':             0,
 };
 const AVG_DEAL_VALUE = 17500;
 

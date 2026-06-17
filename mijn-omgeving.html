@@ -126,6 +126,7 @@
   /* Status buttons (pipeline-specifieke statussen) */
   .status-btn.active[data-status="On hold"] { border-color: rgba(136,136,160,0.4); color: var(--text-muted); background: rgba(136,136,160,0.08); }
   .status-btn.active[data-status="Nieuwe kans"] { border-color: rgba(45,125,210,0.6); color: var(--blue-light); background: rgba(45,125,210,0.1); }
+  .status-btn.active[data-status="Toegevoegd aan Bullhorn"] { border-color: rgba(20,184,166,0.6); color: #14b8a6; background: rgba(20,184,166,0.1); }
   .status-btn.active[data-status="Gemaild"] { border-color: rgba(100,160,220,0.6); color: #7baee0; background: rgba(100,160,220,0.1); }
   .status-btn.active[data-status="Lopend contact"] { border-color: rgba(155,93,229,0.6); color: var(--purple); background: rgba(155,93,229,0.1); }
   .status-btn.active[data-status="Hot"] { border-color: rgba(230,57,70,0.6); color: #e87070; background: rgba(230,57,70,0.1); }
@@ -519,7 +520,7 @@ const supabase = createClient(
 
 const NILS = 'nils.denherder@burgqhsse.nl';
 const MAX = 'max.vanleeuwen@burgbedrijven.nl';
-const SALES_STATUSES = ['On hold', 'Nieuwe kans', 'Gemaild', 'Lopend contact', 'Hot', 'Jobpull', 'Closed won', 'Closed loss'];
+const SALES_STATUSES = ['On hold', 'Nieuwe kans', 'Toegevoegd aan Bullhorn', 'Gemaild', 'Lopend contact', 'Hot', 'Jobpull', 'Closed won', 'Closed loss'];
 const NOGO_REASONS = ['Verkeerde sector','Te operationeel','Intermediair / uitzendbureau','Te junior / stage','Buiten werkgebied','Dubbeling / al bekend','Overig'];
 
 let currentUser = null;
