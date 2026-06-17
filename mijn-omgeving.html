@@ -303,6 +303,13 @@
   .mon-nogo-table td { padding: 6px 8px; border-top: 1px solid var(--border); text-align: center; }
   .mon-nogo-table td:first-child { text-align: left; font-weight: 500; white-space: nowrap; }
   .mon-nogo-count { display: inline-block; min-width: 20px; font-weight: 600; color: var(--nogo); }
+  .mon-presence-chip { display: flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 7px 13px; transition: border-color 0.2s; }
+  .mon-presence-chip.aanwezig { border-color: rgba(29,185,84,0.35); }
+  .mon-presence-chip.afwezig { opacity: 0.4; }
+  .mon-presence-indicator { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--border); transition: background 0.2s; }
+  .mon-presence-indicator.aanwezig { background: var(--go); box-shadow: 0 0 5px rgba(29,185,84,0.5); }
+  .mon-presence-live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--go); margin-left: 6px; vertical-align: middle; animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 </style>
 </head>
 <body>
@@ -388,6 +395,10 @@
   <!-- Tab: Monitoring (MAX only) -->
   <div class="tab-panel" id="tab-monitoring" style="display:none">
     <div class="mon-wrap">
+      <div class="mon-card">
+        <div class="mon-card-title">Aanwezigheid vandaag <span class="mon-presence-live-dot"></span></div>
+        <div id="mon-presence-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div>
+      </div>
       <div>
         <div class="mon-header">
           <div class="mon-section-title">Gebruikersactiviteit</div>
@@ -588,6 +599,15 @@ if (!session) {
   }
 
   await init();
+
+  supabase.channel('employees-presence-watch')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees' }, payload => {
+      const idx = employees.findIndex(e => e.id === payload.new.id);
+      if (idx !== -1) employees[idx].is_present = payload.new.is_present;
+      if (currentUser.email === MAX) renderMonPresence();
+      else renderPresenceBlock();
+    })
+    .subscribe();
 }
 
 window.doLogout = async function() {
@@ -1431,7 +1451,19 @@ window.toggleSc2Desc = function(btn) {
 
 // ── Monitoring tab ─────────────────────────────────────
 async function loadMonitoring() {
+  renderMonPresence();
   await Promise.all([renderMonSwipes(), renderMonNogoReasons(), renderMonPending(), renderMonPipelineHealth()]);
+}
+
+function renderMonPresence() {
+  const grid = document.getElementById('mon-presence-grid');
+  if (!grid) return;
+  const sorted = [...employees].sort((a, b) => (b.is_present ? 1 : 0) - (a.is_present ? 1 : 0) || a.name.localeCompare(b.name));
+  grid.innerHTML = sorted.map(e => `
+    <div class="mon-presence-chip ${e.is_present ? 'aanwezig' : 'afwezig'}">
+      <span class="mon-presence-indicator ${e.is_present ? 'aanwezig' : ''}"></span>
+      <span style="font-size:13px;font-weight:500">${esc(e.name.split(' ')[0])}</span>
+    </div>`).join('');
 }
 
 window.setMonPeriod = function(p) {
