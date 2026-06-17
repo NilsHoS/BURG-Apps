@@ -1692,12 +1692,15 @@ async function renderMonDailyChart() {
     map[key][src] = (map[key][src] || 0) + 1;
   });
 
+  const WEEKDAYS_NL = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
   const days = [];
   for (let i = 13; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000);
     const key = d.toISOString().slice(0, 10);
-    const label = d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' });
-    days.push({ key, label, counts: map[key] || {} });
+    const dateStr = d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' });
+    const dayName = WEEKDAYS_NL[d.getDay()];
+    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    days.push({ key, label: `${dayName} ${dateStr}`, isWeekend, counts: map[key] || {} });
   }
 
   const sources = [
@@ -1714,7 +1717,7 @@ async function renderMonDailyChart() {
       return `<td>${cnt > 0 ? `<span class="mon-source-pill ${s.cls}">${cnt}</span>` : '<span style="color:var(--border)">—</span>'}</td>`;
     }).join('');
     return `<tr>
-      <td>${day.label}</td>
+      <td style="${day.isWeekend ? 'color:var(--amber);font-style:italic' : ''}">${day.label}</td>
       ${sourceCells}
       <td style="font-weight:600">${total === 0 ? `<span class="mon-warn-badge">⚠ 0</span>` : total}</td>
     </tr>`;
