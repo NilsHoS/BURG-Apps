@@ -238,6 +238,66 @@
 </style>
 </head>
 <body>
+<style>
+  #pw-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0a0a0f;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 1rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+  #pw-overlay h2 {
+    color: #e0dfd8; font-size: 18px; font-weight: 500; margin: 0;
+  }
+  #pw-overlay p {
+    color: #5f5e5a; font-size: 13px; margin: 0;
+  }
+  #pw-input {
+    background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 10px;
+    color: #e0dfd8; font-size: 15px; padding: 10px 16px;
+    outline: none; text-align: center; letter-spacing: 2px;
+    width: 220px;
+  }
+  #pw-input:focus { border-color: #4169a0; }
+  #pw-btn {
+    background: #4169a0; color: #fff; border: none;
+    border-radius: 10px; padding: 10px 28px; font-size: 14px;
+    cursor: pointer; width: 220px;
+  }
+  #pw-btn:hover { background: #5278b0; }
+  #pw-error {
+    color: #ef5b57; font-size: 12px; min-height: 16px;
+  }
+</style>
+
+<div id="pw-overlay">
+  <h2>Doorgroei Tracker</h2>
+  <p>Voer het wachtwoord in om verder te gaan</p>
+  <input id="pw-input" type="password" placeholder="Wachtwoord" autofocus
+    onkeydown="if(event.key==='Enter') checkPw()">
+  <button id="pw-btn" onclick="checkPw()">Openen →</button>
+  <span id="pw-error"></span>
+</div>
+
+<script>
+  (function() {
+    if (sessionStorage.getItem('groei_auth') === '1') {
+      document.getElementById('pw-overlay').style.display = 'none';
+    }
+  })();
+  function checkPw() {
+    var val = document.getElementById('pw-input').value;
+    if (val === 'BURGSNNAAL') {
+      sessionStorage.setItem('groei_auth', '1');
+      document.getElementById('pw-overlay').style.display = 'none';
+    } else {
+      document.getElementById('pw-error').textContent = 'Onjuist wachtwoord';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  }
+</script>
+
 <div class="wrap">
   <a href="./index.html" style="display:inline-block;margin-bottom:1rem;color:#2fd3c9;font-size:14px;text-decoration:none;">‹ Terug</a>
 
